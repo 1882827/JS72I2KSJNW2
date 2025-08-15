@@ -7,6 +7,7 @@ local window = library:AddWindow("Veyna | PAID", {
 })
 
 local tabAutomation = window:AddTab("Automation")
+
 tabAutomation:AddLabel("Settings").TextSize = 22
 
 local walkSpeedValue = 16
@@ -18,7 +19,7 @@ tabAutomation:AddTextBox("Speed", function(text)
 end)
 
 local setSpeed = false
-tabAutomation:AddSwitch("Set Speed", function(state)
+tabAutomation:AddSwitch("Set", function(state)
     setSpeed = state
     task.spawn(function()
         while setSpeed do
@@ -49,104 +50,110 @@ tabAutomation:AddTextBox("Size", function(text)
     end
 end)
 
-local setSize = false
-tabAutomation:AddSwitch("Set Size", function(state)
+local function applyBodyScale(scaleValue)
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
+    if not humanoid then return end
+
+    for _, scaleName in ipairs({"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "HeadScale"}) do
+        local scaleInstance = humanoid:FindFirstChild(scaleName)
+        if scaleInstance and type(scaleInstance.Value) == "number" then
+            scaleInstance.Value = scaleValue
+        end
+    end
+end
+
+tabAutomation:AddSwitch("Set", function(state)
     setSize = state
     task.spawn(function()
         while setSize do
-            local char = game.Players.LocalPlayer.Character
-            if char then
-                local humanoid = char:FindFirstChildOfClass("Humanoid")
-                if humanoid and humanoid:FindFirstChild("BodyHeightScale") then
-                    for _, scaleName in pairs({"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "HeadScale"}) do
-                        local scaleInstance = humanoid:FindFirstChild(scaleName)
-                        if scaleInstance then
-                            scaleInstance.Value = sizeValue
-                        end
-                    end
-                end
-            end
+            applyBodyScale(sizeValue)
             task.wait(0.1)
         end
-        local char = game.Players.LocalPlayer.Character
-        if char then
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if humanoid and humanoid:FindFirstChild("BodyHeightScale") then
-                for _, scaleName in pairs({"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "HeadScale"}) do
-                    local scaleInstance = humanoid:FindFirstChild(scaleName)
-                    if scaleInstance then
-                        scaleInstance.Value = 1
-                    end
-                end
-            end
-        end
+        applyBodyScale(1)
     end)
-end)
+end) 
 
 tabAutomation:AddLabel("Misc").TextSize = 22
-tabAutomation:AddSwitch("Show Pets", function(State)
-    local petsEvent = game:GetService("ReplicatedStorage").rEvents.showPetsEvent
-    if petsEvent then
-        petsEvent:FireServer(State and "showPets" or "hidePets")
+
+tabAutomation:AddSwitch("Show Pets", function(state)
+    local rEvents = game:GetService("ReplicatedStorage"):FindFirstChild("rEvents")
+    if not rEvents then return end
+
+    local petsEvent = rEvents:FindFirstChild("showPetsEvent")
+    if petsEvent and petsEvent:IsA("RemoteEvent") then
+        petsEvent:FireServer(state)
     end
 end)
 
-do
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-    local ShowOthersPets = true
-    local connections = {}
+local ShowOthersPets = true
+local Players = game:GetService("Players")
+local connections = {}
 
-    local function SetPetsVisibility(player, visible)
-        if player == LocalPlayer then return end
-        local character = player.Character
-        if not character then return end
-        local petsFolder = character:FindFirstChild("Pets")
-        if petsFolder then
-            for _, pet in ipairs(petsFolder:GetChildren()) do
+local function SetPetsVisibility(player, visible)
+    if player == Players.LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    local petsFolder = char:FindFirstChild("Pets")
+    if petsFolder then
+        for _, pet in ipairs(petsFolder:GetChildren()) do
+            if pet:IsA("Instance") and pet:FindFirstChild("LocalTransparencyModifier") then
                 pet.LocalTransparencyModifier = visible and 0 or 1
             end
         end
     end
-
-    local function WatchPetsFolder(player)
-        if player == LocalPlayer then return end
-        if connections[player] then return end
-        connections[player] = {}
-        local function updateFolder()
-            local character = player.Character
-            if not character then return end
-            local petsFolder = character:FindFirstChild("Pets")
-            if petsFolder then
-                SetPetsVisibility(player, ShowOthersPets)
-                table.insert(connections[player], petsFolder.ChildAdded:Connect(function(pet)
-                    pet.LocalTransparencyModifier = ShowOthersPets and 0 or 1
-                end))
-            end
-        end
-        player.CharacterAdded:Connect(function()
-            task.wait(0.1)
-            updateFolder()
-        end)
-        updateFolder()
-    end
-
-    local function ApplyToAllPlayers()
-        for _, player in ipairs(Players:GetPlayers()) do
-            SetPetsVisibility(player, ShowOthersPets)
-        end
-    end
-
-    Players.PlayerAdded:Connect(WatchPetsFolder)
-    for _, player in ipairs(Players:GetPlayers()) do
-        WatchPetsFolder(player)
-    end
-
-    tabAutomation:AddSwitch("Show Other Pets", function(State)
-        ShowOthersPets = State
-        ApplyToAllPlayers()
-    end)
 end
+
+local function WatchPetsFolder(player)
+    if player == Players.LocalPlayer then return end
+    if connections[player] then return end
+    connections[player] = {}
+
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.1)
+        local petsFolder = char:FindFirstChild("Pets")
+        if petsFolder then
+            -- Ajusta já existente
+            SetPetsVisibility(player, ShowOthersPets)
+            -- Monitora futuros pets
+            table.insert(connections[player],
+                petsFolder.ChildAdded:Connect(function(pet)
+                    if pet:FindFirstChild("LocalTransparencyModifier") then
+                        pet.LocalTransparencyModifier = ShowOthersPets and 0 or 1
+                    end
+                end)
+            )
+        end
+    end)
+
+    local existingChar = player.Character
+    if existingChar then
+        local petsFolder = existingChar:FindFirstChild("Pets")
+        if petsFolder then
+            SetPetsVisibility(player, ShowOthersPets)
+            table.insert(connections[player],
+                petsFolder.ChildAdded:Connect(function(pet)
+                    if pet:FindFirstChild("LocalTransparencyModifier") then
+                        pet.LocalTransparencyModifier = ShowOthersPets and 0 or 1
+                    end
+                end)
+            )
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(WatchPetsFolder)
+for _, p in ipairs(Players:GetPlayers()) do
+    WatchPetsFolder(p)
+end
+
+tabAutomation:AddSwitch("Show Other Pets", function(state)
+    ShowOthersPets = state
+    for _, player in ipairs(Players:GetPlayers()) do
+        SetPetsVisibility(player, ShowOthersPets)
+    end
+end)
 
 local parts = {}
 local partSize = 2048
