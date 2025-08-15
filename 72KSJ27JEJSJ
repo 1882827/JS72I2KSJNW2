@@ -77,6 +77,16 @@ end)
 
 tabAutomation:AddLabel("Misc").TextSize = 22
 
+tabAutomation:AddTextBox("Camera Zoom", function(v)
+    local zoom = tonumber(v)
+    if zoom then
+        zoom = math.clamp(zoom, 0.5, 400)
+        local player = game.Players.LocalPlayer
+        player.CameraMinZoomDistance = zoom
+        player.CameraMaxZoomDistance = zoom
+    end
+end)
+
 tabAutomation:AddSwitch("Show Pets", function(state)
     local rEvents = game:GetService("ReplicatedStorage"):FindFirstChild("rEvents")
     if not rEvents then return end
