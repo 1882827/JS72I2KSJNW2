@@ -75,10 +75,10 @@ tabAutomation:AddSwitch("Set", function(state)
     end)
 end) 
 
-tabAutomation:AddLabel("").TextSize = 30
-tabAutomation:AddLabel("").TextSize = 30
-tabAutomation:AddLabel("").TextSize = 30
-tabAutomation:AddLabel("").TextSize = 30
+local nothingLabel = tabAutomation:AddLabel("")
+local nothingLabel = tabAutomation:AddLabel("")
+local nothingLabel = tabAutomation:AddLabel("")
+local nothingLabel = tabAutomation:AddLabel("")
 
 tabAutomation:AddLabel("Misc").TextSize = 22
 
@@ -258,12 +258,12 @@ tabAutomation:AddSwitch("Inf Jump", function(state)
     infJumpEnabled = state
 end)
 
-tabAutomation:AddLabel("").TextSize = 30
-tabAutomation:AddLabel("").TextSize = 30
-tabAutomation:AddLabel("").TextSize = 30
-tabAutomation:AddLabel("").TextSize = 30
+local nothingLabel = tabAutomation:AddLabel("")
+local nothingLabel = tabAutomation:AddLabel("")
+local nothingLabel = tabAutomation:AddLabel("")
+local nothingLabel = tabAutomation:AddLabel("")
 
-tabAutomation:AddLabel("Protection").TextSize = 22
+tabAutomation:AddLabel("Protection").TextSize = 25
 
 tabAutomation:AddSwitch("Anti Fling", function(Value)
     if Value then
