@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://https://raw.githubusercontent.com/MlFrvWM/BBLT81/main/BL81827TC", true))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/MlFrvWM/BBLT81/main/BL81827TC", true))()
 
 local window = library:AddWindow("Veyna | PAID", {
     main_color = Color3.fromRGB(61, 10, 161),
@@ -7,7 +7,6 @@ local window = library:AddWindow("Veyna | PAID", {
 })
 
 local tabAutomation = window:AddTab("Automation")
-
 tabAutomation:AddLabel("Settings").TextSize = 22
 
 local walkSpeedValue = 16
@@ -19,7 +18,7 @@ tabAutomation:AddTextBox("Speed", function(text)
 end)
 
 local setSpeed = false
-tabAutomation:AddSwitch("Set", function(state)
+tabAutomation:AddSwitch("Set Speed", function(state)
     setSpeed = state
     task.spawn(function()
         while setSpeed do
@@ -51,14 +50,14 @@ tabAutomation:AddTextBox("Size", function(text)
 end)
 
 local setSize = false
-tabAutomation:AddSwitch("Set", function(state)
+tabAutomation:AddSwitch("Set Size", function(state)
     setSize = state
     task.spawn(function()
         while setSize do
             local char = game.Players.LocalPlayer.Character
             if char then
                 local humanoid = char:FindFirstChildOfClass("Humanoid")
-                if humanoid then
+                if humanoid and humanoid:FindFirstChild("BodyHeightScale") then
                     for _, scaleName in pairs({"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "HeadScale"}) do
                         local scaleInstance = humanoid:FindFirstChild(scaleName)
                         if scaleInstance then
@@ -72,7 +71,7 @@ tabAutomation:AddSwitch("Set", function(state)
         local char = game.Players.LocalPlayer.Character
         if char then
             local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if humanoid then
+            if humanoid and humanoid:FindFirstChild("BodyHeightScale") then
                 for _, scaleName in pairs({"BodyDepthScale", "BodyHeightScale", "BodyWidthScale", "HeadScale"}) do
                     local scaleInstance = humanoid:FindFirstChild(scaleName)
                     if scaleInstance then
@@ -85,13 +84,10 @@ tabAutomation:AddSwitch("Set", function(state)
 end)
 
 tabAutomation:AddLabel("Misc").TextSize = 22
-
 tabAutomation:AddSwitch("Show Pets", function(State)
     local petsEvent = game:GetService("ReplicatedStorage").rEvents.showPetsEvent
-    if State then
-        petsEvent:FireServer("showPets")
-    else
-        petsEvent:FireServer("hidePets")
+    if petsEvent then
+        petsEvent:FireServer(State and "showPets" or "hidePets")
     end
 end)
 
@@ -99,12 +95,12 @@ do
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
     local ShowOthersPets = true
+    local connections = {}
 
     local function SetPetsVisibility(player, visible)
         if player == LocalPlayer then return end
         local character = player.Character
         if not character then return end
-
         local petsFolder = character:FindFirstChild("Pets")
         if petsFolder then
             for _, pet in ipairs(petsFolder:GetChildren()) do
@@ -115,27 +111,24 @@ do
 
     local function WatchPetsFolder(player)
         if player == LocalPlayer then return end
-        local character = player.Character
-        if not character then return end
-
-        local petsFolder = character:FindFirstChild("Pets")
-        if petsFolder then
-            SetPetsVisibility(player, ShowOthersPets)
-            petsFolder.ChildAdded:Connect(function(pet)
-                pet.LocalTransparencyModifier = ShowOthersPets and 0 or 1
-            end)
+        if connections[player] then return end
+        connections[player] = {}
+        local function updateFolder()
+            local character = player.Character
+            if not character then return end
+            local petsFolder = character:FindFirstChild("Pets")
+            if petsFolder then
+                SetPetsVisibility(player, ShowOthersPets)
+                table.insert(connections[player], petsFolder.ChildAdded:Connect(function(pet)
+                    pet.LocalTransparencyModifier = ShowOthersPets and 0 or 1
+                end))
+            end
         end
-    end
-
-    local function WatchCharacter(player)
         player.CharacterAdded:Connect(function()
             task.wait(0.1)
-            WatchPetsFolder(player)
+            updateFolder()
         end)
-
-        if player.Character then
-            WatchPetsFolder(player)
-        end
+        updateFolder()
     end
 
     local function ApplyToAllPlayers()
@@ -144,9 +137,9 @@ do
         end
     end
 
-    Players.PlayerAdded:Connect(WatchCharacter)
+    Players.PlayerAdded:Connect(WatchPetsFolder)
     for _, player in ipairs(Players:GetPlayers()) do
-        WatchCharacter(player)
+        WatchPetsFolder(player)
     end
 
     tabAutomation:AddSwitch("Show Other Pets", function(State)
@@ -160,65 +153,36 @@ local partSize = 2048
 local totalDistance = 50000
 local startPosition = Vector3.new(-2, -9.5, -2)
 local numberOfParts = math.ceil(totalDistance / partSize)
+local partsCreated = false
 
 local function createParts()
+    if partsCreated then return end
     for x = 0, numberOfParts - 1 do
         for z = 0, numberOfParts - 1 do
-            local newPartSide = Instance.new("Part")
-            newPartSide.Size = Vector3.new(partSize, 1, partSize)
-            newPartSide.Position = startPosition + Vector3.new(x * partSize, 0, z * partSize)
-            newPartSide.Anchored = true
-            newPartSide.Transparency = 1
-            newPartSide.CanCollide = true
-            newPartSide.Name = "Part_Side_" .. x .. "_" .. z
-            newPartSide.Parent = workspace
-            table.insert(parts, newPartSide)
-            
-            local newPartLeftRight = Instance.new("Part")
-            newPartLeftRight.Size = Vector3.new(partSize, 1, partSize)
-            newPartLeftRight.Position = startPosition + Vector3.new(-x * partSize, 0, z * partSize)
-            newPartLeftRight.Anchored = true
-            newPartLeftRight.Transparency = 1
-            newPartLeftRight.CanCollide = true
-            newPartLeftRight.Name = "Part_LeftRight_" .. x .. "_" .. z
-            newPartLeftRight.Parent = workspace
-            table.insert(parts, newPartLeftRight)
-            
-            local newPartUpLeft = Instance.new("Part")
-            newPartUpLeft.Size = Vector3.new(partSize, 1, partSize)
-            newPartUpLeft.Position = startPosition + Vector3.new(-x * partSize, 0, -z * partSize)
-            newPartUpLeft.Anchored = true
-            newPartUpLeft.Transparency = 1
-            newPartUpLeft.CanCollide = true
-            newPartUpLeft.Name = "Part_UpLeft_" .. x .. "_" .. z
-            newPartUpLeft.Parent = workspace
-            table.insert(parts, newPartUpLeft)
-            
-            local newPartUpRight = Instance.new("Part")
-            newPartUpRight.Size = Vector3.new(partSize, 1, partSize)
-            newPartUpRight.Position = startPosition + Vector3.new(x * partSize, 0, -z * partSize)
-            newPartUpRight.Anchored = true
-            newPartUpRight.Transparency = 1
-            newPartUpRight.CanCollide = true
-            newPartUpRight.Name = "Part_UpRight_" .. x .. "_" .. z
-            newPartUpRight.Parent = workspace
-            table.insert(parts, newPartUpRight)
+            for _, offset in ipairs({
+                Vector3.new(x, 0, z),
+                Vector3.new(-x, 0, z),
+                Vector3.new(-x, 0, -z),
+                Vector3.new(x, 0, -z),
+            }) do
+                local newPart = Instance.new("Part")
+                newPart.Size = Vector3.new(partSize, 1, partSize)
+                newPart.Position = startPosition + Vector3.new(offset.X * partSize, 0, offset.Z * partSize)
+                newPart.Anchored = true
+                newPart.Transparency = 1
+                newPart.CanCollide = true
+                newPart.Parent = workspace
+                table.insert(parts, newPart)
+            end
         end
     end
+    partsCreated = true
 end
 
 local function makePartsWalkthrough()
     for _, part in ipairs(parts) do
         if part and part.Parent then
             part.CanCollide = false
-        end
-    end
-end
-
-local function makePartsSolid()
-    for _, part in ipairs(parts) do
-        if part and part.Parent then
-            part.CanCollide = true
         end
     end
 end
@@ -232,25 +196,20 @@ tabAutomation:AddSwitch("Walk On Water", function(bool)
 end)
 
 local antiAFKConnection
-
 local function setupAntiAFK()
+    if antiAFKConnection then return end
     local vu = game:GetService("VirtualUser")
     antiAFKConnection = game.Players.LocalPlayer.Idled:Connect(function()
-        vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        vu:Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
         task.wait(1)
-        vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        vu:Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
     end)
 end
-
 setupAntiAFK()
 
-local antiAFKEnabled = true
 tabAutomation:AddSwitch("Anti AFK", function(bool)
-    antiAFKEnabled = bool
     if bool then
-        if not antiAFKConnection then
-            setupAntiAFK()
-        end
+        setupAntiAFK()
     else
         if antiAFKConnection then
             antiAFKConnection:Disconnect()
@@ -269,10 +228,6 @@ player.CharacterAdded:Connect(function(char)
     humanoid = char:WaitForChild("Humanoid")
 end)
 
-local function toggleInfJump(state)
-    infJumpEnabled = state
-end
-
 game:GetService("UserInputService").JumpRequest:Connect(function()
     if infJumpEnabled and humanoid then
         humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -280,5 +235,5 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
 end)
 
 tabAutomation:AddSwitch("Inf Jump", function(state)
-    toggleInfJump(state)
+    infJumpEnabled = state
 end)
