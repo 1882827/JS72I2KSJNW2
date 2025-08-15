@@ -8,7 +8,7 @@ local window = library:AddWindow("Veyna | PAID", {
 
 local tabAutomation = window:AddTab("Automation")
 
-tabAutomation:AddLabel("Settings").TextSize = 22
+tabAutomation:AddLabel("Settings").TextSize = 30
 
 local walkSpeedValue = 16
 tabAutomation:AddTextBox("Speed", function(text)
@@ -75,6 +75,11 @@ tabAutomation:AddSwitch("Set", function(state)
     end)
 end) 
 
+tabAutomation:AddLabel("").TextSize = 30
+tabAutomation:AddLabel("").TextSize = 30
+tabAutomation:AddLabel("").TextSize = 30
+tabAutomation:AddLabel("").TextSize = 30
+
 tabAutomation:AddLabel("Misc").TextSize = 22
 
 tabAutomation:AddTextBox("Camera Zoom", function(v)
@@ -124,9 +129,7 @@ local function WatchPetsFolder(player)
         task.wait(0.1)
         local petsFolder = char:FindFirstChild("Pets")
         if petsFolder then
-            -- Ajusta já existente
             SetPetsVisibility(player, ShowOthersPets)
-            -- Monitora futuros pets
             table.insert(connections[player],
                 petsFolder.ChildAdded:Connect(function(pet)
                     if pet:FindFirstChild("LocalTransparencyModifier") then
@@ -255,6 +258,10 @@ tabAutomation:AddSwitch("Inf Jump", function(state)
     infJumpEnabled = state
 end)
 
+tabAutomation:AddLabel("").TextSize = 30
+tabAutomation:AddLabel("").TextSize = 30
+tabAutomation:AddLabel("").TextSize = 30
+tabAutomation:AddLabel("").TextSize = 30
 
 tabAutomation:AddLabel("Protection").TextSize = 22
 
