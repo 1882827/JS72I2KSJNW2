@@ -89,6 +89,19 @@ tabAutomation:AddTextBox("Camera Zoom", function(v)
     end
 end)
 
+local godModeToggle = false
+        tabAutomation:AddSwitch("God Mode (Brawl)", function(State)
+            godModeToggle = State
+            if State then
+                task.spawn(function()
+                    while godModeToggle do
+                        game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer("joinBrawl")
+                        task.wait(0)
+                    end
+                end)
+            end
+        end)
+
 tabAutomation:AddSwitch("Show Pets", function(state)
     local rEvents = game:GetService("ReplicatedStorage"):FindFirstChild("rEvents")
     if not rEvents then return end
@@ -164,6 +177,14 @@ tabAutomation:AddSwitch("Show Other Pets", function(state)
         SetPetsVisibility(player, ShowOthersPets)
     end
 end)
+
+tabAutomation:AddSwitch("Disable Trade", function(State)
+            if State then
+                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
+            else
+                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("enableTrading")
+            end
+        end)
 
 local parts = {}
 local partSize = 2048
@@ -339,4 +360,23 @@ end)
 
 tabAutomation:AddButton("Eat Items", function(state)
     autoEatBoostsEnabled = state
+end)
+
+tabAutomation:AddButton("Auto Fortune Wheel", function(Value)
+    _G.autoFortuneWheelActive = Value
+    if Value then
+        local function openFortuneWheel()
+            while _G.autoFortuneWheelActive do
+                local args = {
+                    [1] = "openFortuneWheel",
+                    [2] = game:GetService("ReplicatedStorage"):WaitForChild("fortuneWheelChances"):WaitForChild("Fortune Wheel")
+                }
+                game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("openFortuneWheelRemote"):InvokeServer(unpack(args))
+                wait(0)
+            end
+        end
+        coroutine.wrap(openFortuneWheel)()
+    else
+        _G.autoFortuneWheelActive = false
+    end
 end)
