@@ -1390,7 +1390,7 @@ updateRebirths()
 
 local tabFarming = window:AddTab("Farming")
 
-tabFarming:AddLabel("Misc").TextSize = 20
+tabFarming:AddLabel("Misc").TextSize = 30
 
 local player = game.Players.LocalPlayer
 local muscleEvent = player:WaitForChild("muscleEvent")
@@ -1578,7 +1578,7 @@ local workoutPositions = {
     ["Muscle King Gym - Pull Up"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477)
 }
 
-tabFarming:AddLabel("Auto Machines").TextSize = 20
+tabFarming:AddLabel("Auto Machines").TextSize = 30
 
 local selectedMachine
 
@@ -1604,7 +1604,7 @@ end)
 
 local nothingLabel = tabFarming:AddLabel("")
 
-tabFarming:AddLabel("Auto Tools").TextSize = 20
+tabFarming:AddLabel("Auto Tools").TextSize = 30
 
 tabFarming:AddSwitch("Weight", function(Value)
     _G.AutoWeight = Value
@@ -1669,9 +1669,7 @@ tabFarming:AddSwitch("Punch", function(state)
     end)
 end)
 
-local nothingLabel = tabFarming:AddLabel("")
-
-tabFarming:AddLabel("Auto Rocks").TextSize = 20
+tabFarming:AddLabel("Auto Rocks").TextSize = 30
 
 function gettool()
     for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
