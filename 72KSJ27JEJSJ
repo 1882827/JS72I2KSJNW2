@@ -351,6 +351,14 @@ tabAutomation:AddButton("Auto Fortune Wheel", function(Value)
     end
 end)
 
+tabAutomation:AddButton("Block Trades", function(State)
+            if State then
+                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
+            else
+                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("enableTrading")
+            end
+        end)
+
 local autoEatBoostsEnabled = false
 
 local boostsList = {
@@ -396,186 +404,112 @@ tabAutomation:AddButton("Eat Items", function(state)
     autoEatBoostsEnabled = state
 end)
 
- tabAutomation:AddButton("Block Trades", function(State)
-            if State then
-                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
-            else
-                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("enableTrading")
-            end
-        end)
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
 local Killing = window:AddTab("Killing")
 
-local function checkCharacter()
-    while not LocalPlayer.Character do task.wait() end
-    return LocalPlayer.Character
-end
-local function isPlayerAlive(player)
-    return player and player.Character
-       and player.Character:FindFirstChild("HumanoidRootPart")
-       and player.Character:FindFirstChild("Humanoid")
-       and player.Character.Humanoid.Health > 0
-end
-local function equipPunch()
-    for _, v in pairs(LocalPlayer.Backpack:GetChildren()) do
-        if v.Name == "Punch" then
-            LocalPlayer.Character.Humanoid:EquipTool(v)
-        end
-    end
-end
-local function killPlayer(target)
-    if not isPlayerAlive(target) then return end
-    local char = checkCharacter()
-    if char and char:FindFirstChild("LeftHand") then
-        pcall(function()
-            firetouchinterest(target.Character.HumanoidRootPart, char.LeftHand, 0)
-            firetouchinterest(target.Character.HumanoidRootPart, char.LeftHand, 1)
-            equipPunch()
-        end)
-    end
-end
-local function getPlayerDisplay(player)
-    return player.DisplayName .. " | " .. player.Name
-end
+Killing:AddLabel("Kill Aura").TextSize = 30
 
-_G.whitelistedPlayers = _G.whitelistedPlayers or {}
-_G.blacklistedPlayers = _G.blacklistedPlayers or {}
-local function isWhitelisted(player)
-    for _, name in ipairs(_G.whitelistedPlayers) do
-        if name:lower() == player.Name:lower() then return true end
-    end
-    return false
-end
-local function isBlacklisted(player)
-    for _, name in ipairs(_G.blacklistedPlayers) do
-        if name:lower() == player.Name:lower() then return true end
-    end
-    return false
-end
-
-local columns = Killing:AddHorizontalAlignment()
-
-local wlColumn = columns:AddColumn()
-local wlDropdown = wlColumn:AddDropdown("Whitelist", function(text)
-    local pname = text:match("| (.+)$"):gsub("^%s+", ""):gsub("%s+$", "")
-    if pname and not isWhitelisted({Name = pname}) then
-        table.insert(_G.whitelistedPlayers, pname)
-    end
-end)
-wlColumn:AddButton("Clear Whitelist", function()
-    _G.whitelistedPlayers = {}
-end)
-wlColumn:AddSwitch("Whitelist Friends", function(state)
-    if state then
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr:IsFriendsWith(LocalPlayer.UserId) and not isWhitelisted(plr) then
-                table.insert(_G.whitelistedPlayers, plr.Name)
+local dropdown = Killing:AddDropdown("Select Pet", function(text)
+    local petsFolder = game.Players.LocalPlayer.petsFolder
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer("unequipPet", pet)
             end
         end
     end
-end)
-wlColumn:AddSwitch("WL Invincibility (Experimental)", function(state)
-    _G.wlInvincible = state
-end)
+    task.wait(0.2)
 
-local blColumn = columns:AddColumn()
-local blDropdown = blColumn:AddDropdown("Blacklist", function(text)
-    local pname = text:match("| (.+)$"):gsub("^%s+", ""):gsub("%s+$", "")
-    if pname and not isBlacklisted({Name = pname}) then
-        table.insert(_G.blacklistedPlayers, pname)
+    local petName = text
+    local petsToEquip = {}
+
+    for _, pet in pairs(game.Players.LocalPlayer.petsFolder.Unique:GetChildren()) do
+        if pet.Name == petName then
+            table.insert(petsToEquip, pet)
+        end
+    end
+
+    for i = 1, math.min(8, #petsToEquip) do
+        game:GetService("ReplicatedStorage").rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
+        task.wait(0.1)
     end
 end)
-blColumn:AddButton("Clear Blacklist", function()
-    _G.blacklistedPlayers = {}
-end)
-blColumn:AddSwitch("Kill List", function(state)
-    if state then
-        _G.blacklistKillConn = RunService.Heartbeat:Connect(function()
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr ~= LocalPlayer and isBlacklisted(plr) and (not _G.wlInvincible or not isWhitelisted(plr)) then
-                    killPlayer(plr)
-                end
-            end
-        end)
-    else
-        if _G.blacklistKillConn then _G.blacklistKillConn:Disconnect() _G.blacklistKillConn = nil end
-    end
-end)
-blColumn:AddSwitch("Kill All", function(state)
-    if state then
-        _G.killAllConn = RunService.Heartbeat:Connect(function()
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr ~= LocalPlayer and not isWhitelisted(plr) then
-                    killPlayer(plr)
-                end
-            end
-        end)
-    else
-        if _G.killAllConn then _G.killAllConn:Disconnect() _G.killAllConn = nil end
-    end
-end)
+dropdown:Add("Wild Wizard")
+dropdown:Add("Mighty Monster")
 
-Killing:AddTextBox("Range (1-140)", function(text)
-    local range = tonumber(text)
-    if range then _G.deathRingRange = math.clamp(range, 1, 140) end
-end)
-Killing:AddTextBox("Player Name (Optional)", function(text)
-    _G.targetPlayerName = text
-end)
+local LocalPlayer = game.Players.LocalPlayer
 
-Killing:AddSwitch("Protect Player", function(state)
-    _G.protectPlayer = state
-end)
-Killing:AddSwitch("Death Ring", function(state)
+local button = Killing:AddSwitch("No Punch Animation", function(state)
     if state then
-        _G.deathRingConn = RunService.Heartbeat:Connect(function()
-            local char = checkCharacter()
-            local myPos = char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position
-            if myPos then
-                for _, plr in ipairs(Players:GetPlayers()) do
-                    if plr ~= LocalPlayer and not isWhitelisted(plr) and isPlayerAlive(plr) then
-                        if (myPos - plr.Character.HumanoidRootPart.Position).Magnitude <= (_G.deathRingRange or 20) then
-                            killPlayer(plr)
-                        end
+        local blockedAnimations = {
+            ["rbxassetid://3638729053"] = true,
+            ["rbxassetid://3638767427"] = true,
+        }
+
+        local function stopBlockedAnimations(humanoid)
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                if track.Animation then
+                    local animId = track.Animation.AnimationId
+                    local animName = track.Name:lower()
+                    if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+                        track:Stop()
                     end
                 end
             end
+        end
+
+        local function setupAnimationBlocking()
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("Humanoid") then return end
+            local humanoid = char:FindFirstChild("Humanoid")
+
+            stopBlockedAnimations(humanoid)
+
+            if not _G.AnimBlockConnection then
+                _G.AnimBlockConnection = humanoid.AnimationPlayed:Connect(function(track)
+                    if track.Animation then
+                        local animId = track.Animation.AnimationId
+                        local animName = track.Name:lower()
+                        if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+                            track:Stop()
+                        end
+                    end
+                end)
+            end
+        end
+
+        setupAnimationBlocking()
+
+        _G.AutoPunchLoop = true
+        task.spawn(function()
+            while _G.AutoPunchLoop do
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    stopBlockedAnimations(char.Humanoid)
+                end
+
+                local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or (char and char:FindFirstChild("Punch"))
+                if punch then
+                    if punch.Parent ~= char then
+                        punch.Parent = char
+                    end
+                    LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+                    LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+                end
+                task.wait(0.01)
+            end
         end)
+
+        if not _G.CharacterAddedConnection then
+            _G.CharacterAddedConnection = LocalPlayer.CharacterAdded:Connect(function()
+                task.wait(1)
+                setupAnimationBlocking()
+            end)
+        end
     else
-        if _G.deathRingConn then _G.deathRingConn:Disconnect() _G.deathRingConn = nil end
+        _G.AutoPunchLoop = false
+        if _G.AnimBlockConnection then _G.AnimBlockConnection:Disconnect() _G.AnimBlockConnection = nil end
     end
-end)
-Killing:AddSwitch("Invisible", function(state)
-    _G.invisible = state
 end)
 
-local wlLabel = Killing:AddLabel("Whitelisted players: None")
-local blLabel = Killing:AddLabel("Blacklisted players: None")
-local function updateLabels()
-    wlLabel.Text = "Whitelisted players: " .. (#_G.whitelistedPlayers > 0 and table.concat(_G.whitelistedPlayers, ", ") or "None")
-    blLabel.Text = "Blacklisted players: " .. (#_G.blacklistedPlayers > 0 and table.concat(_G.blacklistedPlayers, ", ") or "None")
-end
-RunService.Heartbeat:Connect(updateLabels)
+local nothingLabel = Killing:AddLabel("")
 
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= LocalPlayer then
-        local txt = getPlayerDisplay(plr)
-        wlDropdown:Add(txt)
-        blDropdown:Add(txt)
-    end
-end
-Players.PlayerAdded:Connect(function(plr)
-    if plr ~= LocalPlayer then
-        local txt = getPlayerDisplay(plr)
-        wlDropdown:Add(txt)
-        blDropdown:Add(txt)
-    end
-end)
-Players.PlayerRemoving:Connect(function(plr)
-    local txt = getPlayerDisplay(plr)
-    wlDropdown:Remove(txt)
-    blDropdown:Remove(txt)
-end)
