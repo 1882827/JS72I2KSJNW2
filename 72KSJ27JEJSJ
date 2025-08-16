@@ -8,7 +8,7 @@ local window = library:AddWindow("Veyna | PAID", {
 
 local tabAutomation = window:AddTab("Automation")
 
-tabAutomation:AddLabel("Settings").TextSize = 30
+tabAutomation:AddLabel("Settings").TextSize = 29
 
 local walkSpeedValue = 16
 tabAutomation:AddTextBox("Speed", function(text)
