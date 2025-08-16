@@ -991,43 +991,37 @@ local function toOption(plr)
     return string.format("%s | %s", plr.DisplayName, plr.Name)
 end
 
-local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
-    if typeof(Value) ~= "string" then return end
-    local disp, user = Value:match("^(.-)%s+|%s+(.+)$")
+local SelectPlayer = nil
+
+local specsDropdown = tabSpecs:AddDropdown("Select Player", function(selectedText)
+    local disp, user = selectedText:match("^(.-)%s+|%s+(.+)$")
     if disp and user then
         SelectPlayer = Players:FindFirstChild(user)
+    else
+        SelectPlayer = nil
     end
 end)
 
-local playerOptions = {}
+local function getSpecsDisplayText(plr)
+    return plr.DisplayName .. " | " .. plr.Name
+end
 
-local function updateDropdown()
-    for _, data in ipairs(playerOptions) do
-        data:Remove()
-    end
-    table.clear(playerOptions)
-
-    local selected = SelectPlayer and toOption(SelectPlayer) or nil
-    local stillExists = false
-
+local function refreshSpecsDropdown()
+    specsDropdown:Clear()
     for _, plr in ipairs(Players:GetPlayers()) do
-        local opt = toOption(plr)
-        local object = PlayerDrop:Add(opt)
-        table.insert(playerOptions, object)
-        if selected and opt == selected then
-            stillExists = true
-            PlayerDrop:SetValue(opt)
-        end
-    end
-
-    if not stillExists then
-        SelectPlayer = nil
+        specsDropdown:Add(getSpecsDisplayText(plr))
     end
 end
 
-Players.PlayerAdded:Connect(updateDropdown)
-Players.PlayerRemoving:Connect(updateDropdown)
-updateDropdown()
+Players.PlayerAdded:Connect(function(plr)
+    refreshSpecsDropdown()
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    refreshSpecsDropdown()
+end)
+
+refreshSpecsDropdown()
 
 local function formatValue(n)
     n = tonumber(n) or 0
