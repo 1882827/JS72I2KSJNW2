@@ -985,7 +985,7 @@ local Players     = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera      = workspace:WaitForChild("CurrentCamera")
 
-local SelectPlayerName, SelectPlayerUser = "", ""
+local SelectPlayer = nil
 
 local function toOption(plr)
     return string.format("%s | %s", plr.DisplayName, plr.Name)
@@ -995,13 +995,12 @@ local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
     if typeof(Value) ~= "string" then return end
     local disp, user = Value:match("^(.-)%s+|%s+(.+)$")
     if disp and user then
-        SelectPlayerName = disp
-        SelectPlayerUser = user
+        SelectPlayer = Players:FindFirstChild(user)
     end
 end)
 
 local function updateDropdown()
-    local selected = (SelectPlayerName ~= "" and SelectPlayerUser ~= "") and (SelectPlayerName.." | "..SelectPlayerUser) or nil
+    local selected = SelectPlayer and toOption(SelectPlayer) or nil
     PlayerDrop:Clear()
 
     local stillExists = false
@@ -1012,24 +1011,21 @@ local function updateDropdown()
     end
 
     if not stillExists then
-        SelectPlayerName, SelectPlayerUser = "", ""
+        SelectPlayer = nil
     end
 end
-
 Players.PlayerAdded:Connect(updateDropdown)
 Players.PlayerRemoving:Connect(updateDropdown)
-
 updateDropdown()
 
 local function formatValue(n)
     n = tonumber(n) or 0
-    local absn = math.abs(n)
-    local sign = n < 0 and "-" or ""
-    if absn >= 1e15 then return string.format("%s%.2fQa", sign, absn / 1e15)
-    elseif absn >= 1e12 then return string.format("%s%.2fT",  sign, absn / 1e12)
-    elseif absn >= 1e9  then return string.format("%s%.2fB",  sign, absn / 1e9)
-    elseif absn >= 1e6  then return string.format("%s%.2fM",  sign, absn / 1e6)
-    elseif absn >= 1e3  then return string.format("%s%.2fK",  sign, absn / 1e3)
+    local absn, sign = math.abs(n), n < 0 and "-" or ""
+    if absn >= 1e15 then return string.format("%s%.2fQa", sign, absn/1e15)
+    elseif absn >= 1e12 then return string.format("%s%.2fT",  sign, absn/1e12)
+    elseif absn >= 1e9  then return string.format("%s%.2fB",  sign, absn/1e9)
+    elseif absn >= 1e6  then return string.format("%s%.2fM",  sign, absn/1e6)
+    elseif absn >= 1e3  then return string.format("%s%.2fK",  sign, absn/1e3)
     else return tostring(n) end
 end
 
@@ -1044,16 +1040,14 @@ end
 
 local function readValueObject(v)
     if not v then return 0 end
-    if typeof(v) == "IntValue" or typeof(v) == "NumberValue" then return tonumber(v.Value) or 0 end
-    if typeof(v) == "StringValue" then return parseValue(v.Value) end
-    if typeof(v) == "number" then return v end
-    if typeof(v) == "string" then return parseValue(v) end
+    if v:IsA("IntValue") or v:IsA("NumberValue") then return tonumber(v.Value) or 0 end
+    if v:IsA("StringValue") then return parseValue(v.Value) end
     return 0
 end
 
-local function getStatValue(container, statName)
-    local stat = container and container:FindFirstChild(statName)
-    return stat and readValueObject(stat) or 0
+local function getStat(plr, name)
+    local stats = plr:FindFirstChild("leaderstats")
+    return stats and readValueObject(stats:FindFirstChild(name)) or 0
 end
 
 local lblDisplayName = tabSpecs:AddLabel("")
@@ -1088,22 +1082,24 @@ local function safeValue(val, default)
     return (val and val > 0) and val or default
 end
 
-local function getDynamicStats(plr, stats)
-    local strength   = safeValue(getStatValue(stats, "Strength"),   1)
-    local durability = safeValue(getStatValue(stats, "Durability"), 1)
-    local rebirths   = safeValue(getStatValue(stats, "Rebirths"),   0)
-    local kills      = safeValue(getStatValue(stats, "Kills"),      0)
-    local agility    = safeValue(getStatValue(stats, "Agility"),    1)
+local function getDynamicStats(plr)
+    local stats = plr:FindFirstChild("leaderstats")
+    if not stats then return nil end
 
-    local packs = safeValue(getStatValue(plr, "Packs"), DEFAULT_PACKS)
+    local strength   = safeValue(getStat(plr, "Strength"), 1)
+    local durability = safeValue(getStat(plr, "Durability"), 1)
+    local rebirths   = safeValue(getStat(plr, "Rebirths"), 0)
+    local kills      = safeValue(getStat(plr, "Kills"), 0)
+    local agility    = safeValue(getStat(plr, "Agility"), 1)
 
-    local ultimatePercent = safeValue(getStatValue(plr, "UltimateBoost"), DEFAULT_ULTIMATE_BOOST)
-    local ultimateBoost   = durability * (ultimatePercent / 100)
+    local packs = safeValue(getStat(plr, "Packs"), DEFAULT_PACKS)
+    local ultimatePercent = safeValue(getStat(plr, "UltimateBoost"), DEFAULT_ULTIMATE_BOOST)
+    local petsBoostPercent = safeValue(getStat(plr, "PetsBoost"), DEFAULT_PETS_PER_PACK * packs)
 
-    local petsBoostPercent = safeValue(getStatValue(plr, "PetsBoost"), DEFAULT_PETS_PER_PACK * packs)
-    local petsBoost        = durability * (petsBoostPercent / 100)
+    local ultimateBoost = durability * (ultimatePercent / 100)
+    local petsBoost = durability * (petsBoostPercent / 100)
+    local totalDur = durability + ultimateBoost + petsBoost
 
-    local totalDur   = durability + ultimateBoost + petsBoost
     local baseDamage = math.max(1, strength * BASE_DAMAGE_FACTOR)
     local withPets   = math.max(1, strength * (BASE_DAMAGE_FACTOR + PACK_FACTOR_PER_PACK * packs))
 
@@ -1113,9 +1109,9 @@ local function getDynamicStats(plr, stats)
     return {
         strength = strength,
         durability = durability,
+        agility = agility,
         rebirths = rebirths,
         kills = kills,
-        agility = agility,
         packs = packs,
         ultimateBoost = ultimateBoost,
         petsBoost = petsBoost,
@@ -1129,50 +1125,14 @@ local function getDynamicStats(plr, stats)
     }
 end
 
-local isSpectating, spectateTarget = false, nil
-
-local function stopSpectate()
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    Camera.CameraSubject = char:WaitForChild("Humanoid")
-    isSpectating, spectateTarget = false, nil
-end
-
-tabSpecs:AddButton("Print Own Stats", function()
-    print("Printing stats do jogador local...")
-end).TextColor3 = Color3.fromRGB(255,255,255)
-
-tabSpecs:AddButton("Spectate", function()
-    if SelectPlayerUser == "" then return end
-    local target = Players:FindFirstChild(SelectPlayerUser)
-    if target and target ~= LocalPlayer then
-        local humanoid = (target.Character or target.CharacterAdded:Wait()):WaitForChild("Humanoid")
-        Camera.CameraSubject, spectateTarget, isSpectating = humanoid, target, true
-        target.CharacterAdded:Connect(function(newChar)
-            if isSpectating and spectateTarget == target then
-                Camera.CameraSubject = newChar:WaitForChild("Humanoid")
-            end
-        end)
-    end
-end).TextColor3 = Color3.fromRGB(255,255,255)
-
-tabSpecs:AddButton("Stop Spectate", function()
-    stopSpectate()
-end).TextColor3 = Color3.fromRGB(255,255,255)
-
-Players.PlayerRemoving:Connect(function(plr) if spectateTarget == plr then stopSpectate() end end)
-LocalPlayer.CharacterAdded:Connect(function(newChar) if not isSpectating then Camera.CameraSubject = newChar:WaitForChild("Humanoid") end end)
-
 task.spawn(function()
     while task.wait(1) do
-        if SelectPlayerUser ~= "" then
-            local plr = Players:FindFirstChild(SelectPlayerUser)
-            local stats = plr and plr:FindFirstChild("leaderstats")
-            if stats then
-                lblDisplayName.Text = "Displayname: " .. plr.DisplayName
-                lblUsername.Text    = "Username: @" .. plr.Name
+        if SelectPlayer and SelectPlayer.Parent then
+            lblDisplayName.Text = "Displayname: " .. SelectPlayer.DisplayName
+            lblUsername.Text    = "Username: @" .. SelectPlayer.Name
 
-                local data = getDynamicStats(plr, stats)
-
+            local data = getDynamicStats(SelectPlayer)
+            if data then
                 lblStrength.Text   = "Strength: "   .. formatValue(data.strength)
                 lblDurability.Text = "Durability: " .. formatValue(data.durability)
                 lblAgility.Text    = "Agility: "    .. formatValue(data.agility)
@@ -1186,13 +1146,47 @@ task.spawn(function()
                 lblTotalDur.Text      = "TOTAL DURABILITY: " .. formatValue(data.totalDur)
                 lblTotalDur.TextColor3 = Color3.fromRGB(0, 255, 255)
 
-                lblBaseDamage.Text = "Your Base Damage: " .. formatValue(data.baseDamage)
-                lblWithPets.Text   = string.format("With Your Pets (%d): %s", data.packs, formatValue(data.withPets))
+                lblBaseDamage.Text = "Base Damage: " .. formatValue(data.baseDamage)
+                lblWithPets.Text   = string.format("With Pets (%d): %s", data.packs, formatValue(data.withPets))
                 lblWithPets.TextColor3 = Color3.fromRGB(255, 0, 0)
 
                 lblHitsKill.Text = "Hits to Kill: " .. (data.hitsToKill == 1 and "INSTANT" or tostring(data.hitsToKill))
                 lblTimeKill.Text = "Time to Kill: " .. (data.hitsToKill == 1 and "INSTANT" or string.format("%.1fs", data.timeToKill))
             end
+        else
+            lblDisplayName.Text, lblUsername.Text = "", ""
+            lblStrength.Text, lblDurability.Text  = "", ""
+            lblAgility.Text, lblRebirths.Text     = "", ""
+            lblKills.Text                         = ""
+            lblBaseDur.Text, lblUltimate.Text     = "", ""
+            lblPets.Text, lblTotalDur.Text        = "", ""
+            lblBaseDamage.Text, lblWithPets.Text  = "", ""
+            lblHitsKill.Text, lblTimeKill.Text    = ""
         end
     end
 end)
+
+tabSpecs:AddButton("Print Own Stats", function()
+    local data = getDynamicStats(LocalPlayer)
+    if data then
+        print("[SPECS] Local Player Stats:")
+        print("Strength:", data.strength, "Durability:", data.durability, "Agility:", data.agility, "Rebirths:", data.rebirths, "Kills:", data.kills)
+        print("Total Dur:", data.totalDur, "Base Damage:", data.baseDamage, "With Pets:", data.withPets)
+        print("Hits to Kill:", data.hitsToKill, "Time to Kill:", data.timeToKill)
+    end
+end).TextColor3 = Color3.fromRGB(255,255,255)
+
+tabSpecs:AddButton("Spectate", function()
+    if SelectPlayer and SelectPlayer ~= LocalPlayer then
+        local humanoid = (SelectPlayer.Character or SelectPlayer.CharacterAdded:Wait()):WaitForChild("Humanoid")
+        Camera.CameraSubject = humanoid
+        SelectPlayer.CharacterAdded:Connect(function(newChar)
+            Camera.CameraSubject = newChar:WaitForChild("Humanoid")
+        end)
+    end
+end).TextColor3 = Color3.fromRGB(255,255,255)
+
+tabSpecs:AddButton("Stop Spectate", function()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    Camera.CameraSubject = char:WaitForChild("Humanoid")
+end).TextColor3 = Color3.fromRGB(255,255,255)
