@@ -981,7 +981,12 @@ local tabSpecs = window:AddTab("Specs")
 
 tabSpecs:AddLabel("View Player").TextSize = 30
 
-local SelectPlayerName, SelectPlayerUser = "", ""
+local Players     = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local function toOption(plr)
+    return string.format("%s | %s", plr.DisplayName, plr.Name)
+end
 
 local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
     if typeof(Value) ~= "string" then return end
@@ -991,6 +996,35 @@ local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
         SelectPlayerUser = user
     end
 end)
+
+local function updateDropdown()
+    for _, item in pairs(PlayerDrop:GetItems()) do
+        PlayerDrop:Remove(item.Text)
+    end
+
+    local selected = (SelectPlayerName ~= "" and SelectPlayerUser ~= "")
+        and (SelectPlayerName.." | "..SelectPlayerUser)
+        or nil
+
+    local stillExists = false
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        local opt = toOption(plr)
+        PlayerDrop:Add(opt)
+        if selected and opt == selected then
+            stillExists = true
+        end
+    end
+
+    if not stillExists then
+        SelectPlayerName, SelectPlayerUser = "", ""
+    end
+end
+
+Players.PlayerAdded:Connect(updateDropdown)
+Players.PlayerRemoving:Connect(updateDropdown)
+
+updateDropdown()
 
 local Players     = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
