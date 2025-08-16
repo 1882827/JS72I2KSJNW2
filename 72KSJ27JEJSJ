@@ -1001,19 +1001,27 @@ local specsDropdown = tabSpecs:AddDropdown("Select Player", function(selectedTex
     end
 end)
 
-specsDropdown:Add("Carregando...")
-
-local function refreshSpecsDropdown()
-    specsDropdown:Clear()
-    for _, plr in ipairs(Players:GetPlayers()) do
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer then
         specsDropdown:Add(getSpecsDisplayText(plr))
     end
 end
 
-Players.PlayerAdded:Connect(refreshSpecsDropdown)
-Players.PlayerRemoving:Connect(refreshSpecsDropdown)
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= LocalPlayer then
+        specsDropdown:Add(getSpecsDisplayText(plr))
+    end
+end)
 
-refreshSpecsDropdown()
+Players.PlayerRemoving:Connect(function(plr)
+    local displayText = getSpecsDisplayText(plr)
+    for _, item in pairs(specsDropdown:GetItems()) do
+        if item.Text == displayText then
+            specsDropdown:Remove(item.Text)
+            break
+        end
+    end
+end)
 
 local function formatValue(n)
     n = tonumber(n) or 0
