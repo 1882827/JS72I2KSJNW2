@@ -76,7 +76,6 @@ tabAutomation:AddSwitch("Set", function(state)
 end) 
 
 local nothingLabel = tabAutomation:AddLabel("")
-local nothingLabel = tabAutomation:AddLabel("")
 
 tabAutomation:AddLabel("Misc").TextSize = 22
 
@@ -256,7 +255,6 @@ tabAutomation:AddSwitch("Inf Jump", function(state)
     infJumpEnabled = state
 end)
 
-local nothingLabel = tabAutomation:AddLabel("")
 local nothingLabel = tabAutomation:AddLabel("")
 
 tabAutomation:AddLabel("Protection").TextSize = 25
