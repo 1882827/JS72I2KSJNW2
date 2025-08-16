@@ -759,7 +759,7 @@ end)
 
 local nothingLabel = Killing:AddLabel("")
 
-local whitelistLabel = Killing:AddLabel("Whitelisted Players:\nNone")
+local whitelistLabel = Killing:AddLabel("Whitelisted Players:\nNone\n")
 
 local blacklistLabel = Killing:AddLabel("Blacklisted Players:\nNone")
 
