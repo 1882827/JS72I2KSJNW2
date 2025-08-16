@@ -623,6 +623,18 @@ Killing:AddSwitch("Whitelist Friends", function(state)
     end
 end)
 
+local blacklistTextbox = Killing:AddTextbox("Blacklist", function(inputText)
+    local playerName = inputText:match("^%s*(.-)%s*$") -- Remove espaços no início/fim
+    if playerName ~= "" then
+        for _, name in ipairs(_G.blacklistedPlayers) do
+            if name:lower() == playerName:lower() then
+                return -- Já está na blacklist
+            end
+        end
+        table.insert(_G.blacklistedPlayers, playerName)
+    end
+end, "Enter the player name")
+
 local blacklistDropdown = Killing:AddDropdown("Blacklist", function(selectedText)
     local playerName = selectedText:match("| (.+)$")
     if playerName then
@@ -745,4 +757,38 @@ Players.PlayerRemoving:Connect(function(player)
     blacklistDropdown:Remove(displayText)
 end)
 
-local listLabel = Killing:AddLabel("")
+local nothingLabel = Killing:AddLabel("")
+
+local whitelistLabel = Killing:AddLabel("Whitelist: None")
+whitelistLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+whitelistLabel.TextSize = 17
+
+local nothingLabel = Killing:AddLabel("")
+
+local blacklistLabel = Killing:AddLabel("Targets: None")
+blacklistLabel.TextColor3 = Color3.fromRGB(191, 25, 25)
+blacklistLabel.TextSize = 17
+
+local function updateWhitelistLabel()
+    if #_G.whitelistedPlayers == 0 then
+        whitelistLabel.Text = "Whitelist: None"
+    else
+        whitelistLabel.Text = "Whitelist: " .. table.concat(_G.whitelistedPlayers, ", ")
+    end
+end
+
+local function updateBlacklistLabel()
+    if #_G.blacklistedPlayers == 0 then
+        blacklistLabel.Text = "Targets: None"
+    else
+        blacklistLabel.Text = "Targets: " .. table.concat(_G.blacklistedPlayers, ", ")
+    end
+end
+
+task.spawn(function()
+    while true do
+        updateWhitelistLabel()
+        updateBlacklistLabel()
+        task.wait(0.2)
+    end
+end)
