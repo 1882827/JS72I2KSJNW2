@@ -992,7 +992,7 @@ local function getSpecsDisplayText(plr)
 end
 
 local specsDropdown = tabSpecs:AddDropdown("Select Player", function(selectedText)
-    if selectedText == "Nenhum Player" then
+    if selectedText == "No Player" then
         SelectPlayer = nil
         return
     end
