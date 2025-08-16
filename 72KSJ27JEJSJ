@@ -991,6 +991,19 @@ local function getSpecsDisplayText(plr)
     return plr.DisplayName .. " | " .. plr.Name
 end
 
+local function getStat(plr, name)
+    local stats = plr:FindFirstChild("leaderstats")
+    if not stats then return 0 end
+    local val = stats:FindFirstChild(name)
+    if not val then return 0 end
+    if val:IsA("IntValue") or val:IsA("NumberValue") then
+        return tonumber(val.Value) or 0
+    elseif val:IsA("StringValue") then
+        return parseValue(val.Value)
+    end
+    return 0
+end
+
 local specsDropdown = tabSpecs:AddDropdown("Select Player", function(selectedText)
     if selectedText == "No Player" then
         SelectPlayer = nil
@@ -1048,18 +1061,6 @@ local function parseValue(s)
     return suf ~= "" and suffixes[suf] and n * suffixes[suf] or n
 end
 
-local function readValueObject(v)
-    if not v then return 0 end
-    if v:IsA("IntValue") or v:IsA("NumberValue") then return tonumber(v.Value) or 0 end
-    if v:IsA("StringValue") then return parseValue(v.Value) end
-    return 0
-end
-
-local function getStat(plr, name)
-    local stats = plr:FindFirstChild("leaderstats")
-    return stats and readValueObject(stats:FindFirstChild(name)) or 0
-end
-
 local lblDisplayName = tabSpecs:AddLabel("")
 local lblUsername    = tabSpecs:AddLabel("")
 local lblStrength    = tabSpecs:AddLabel("")
@@ -1093,29 +1094,21 @@ local function safeValue(val, default)
 end
 
 local function getDynamicStats(plr)
-    local stats = plr:FindFirstChild("leaderstats")
-    if not stats then return nil end
-
     local strength   = safeValue(getStat(plr, "Strength"), 1)
     local durability = safeValue(getStat(plr, "Durability"), 1)
     local rebirths   = safeValue(getStat(plr, "Rebirths"), 0)
     local kills      = safeValue(getStat(plr, "Kills"), 0)
     local agility    = safeValue(getStat(plr, "Agility"), 1)
-
     local packs = safeValue(getStat(plr, "Packs"), DEFAULT_PACKS)
     local ultimatePercent = safeValue(getStat(plr, "UltimateBoost"), DEFAULT_ULTIMATE_BOOST)
     local petsBoostPercent = safeValue(getStat(plr, "PetsBoost"), DEFAULT_PETS_PER_PACK * packs)
-
     local ultimateBoost = durability * (ultimatePercent / 100)
     local petsBoost = durability * (petsBoostPercent / 100)
     local totalDur = durability + ultimateBoost + petsBoost
-
     local baseDamage = math.max(1, strength * BASE_DAMAGE_FACTOR)
     local withPets   = math.max(1, strength * (BASE_DAMAGE_FACTOR + PACK_FACTOR_PER_PACK * packs))
-
     local hitsToKill = math.max(1, math.ceil(totalDur / baseDamage))
     local timeToKill = hitsToKill / ATTACK_SPEED
-
     return {
         strength = strength,
         durability = durability,
@@ -1140,7 +1133,6 @@ task.spawn(function()
         if SelectPlayer and SelectPlayer.Parent then
             lblDisplayName.Text = "Displayname: " .. SelectPlayer.DisplayName
             lblUsername.Text    = "Username: @" .. SelectPlayer.Name
-
             local data = getDynamicStats(SelectPlayer)
             if data then
                 lblStrength.Text   = "Strength: "   .. formatValue(data.strength)
@@ -1148,18 +1140,14 @@ task.spawn(function()
                 lblAgility.Text    = "Agility: "    .. formatValue(data.agility)
                 lblRebirths.Text   = "Rebirths: "   .. formatValue(data.rebirths)
                 lblKills.Text      = "Kills: "      .. formatValue(data.kills)
-
                 lblBaseDur.Text  = "Base Durability: " .. formatValue(data.durability)
                 lblUltimate.Text = string.format("Ultimate Boost: %s (+%d%%)", formatValue(data.ultimateBoost), data.ultimatePercent)
                 lblPets.Text     = string.format("Pets Boost (%d): %s", data.packs, formatValue(data.petsBoost))
-
-                lblTotalDur.Text      = "TOTAL DURABILITY: " .. formatValue(data.totalDur)
+                lblTotalDur.Text       = "TOTAL DURABILITY: " .. formatValue(data.totalDur)
                 lblTotalDur.TextColor3 = Color3.fromRGB(0, 255, 255)
-
                 lblBaseDamage.Text = "Base Damage: " .. formatValue(data.baseDamage)
                 lblWithPets.Text   = string.format("With Pets (%d): %s", data.packs, formatValue(data.withPets))
                 lblWithPets.TextColor3 = Color3.fromRGB(255, 0, 0)
-
                 lblHitsKill.Text = "Hits to Kill: " .. (data.hitsToKill == 1 and "INSTANT" or tostring(data.hitsToKill))
                 lblTimeKill.Text = "Time to Kill: " .. (data.hitsToKill == 1 and "INSTANT" or string.format("%.1fs", data.timeToKill))
             end
