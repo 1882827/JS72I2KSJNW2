@@ -623,12 +623,91 @@ Killing:AddSwitch("Whitelist Friends", function(state)
     end
 end)
 
+local LocalPlayer = game.Players.LocalPlayer
+local sizeToSet = 0/0
+local megaSwitchEnabled = false
+local posLockConnection
+local safePlatform
+
+local megaSwitch = Killing:AddSwitch("Safe Spot + Nan Size + Equip + Auto Punch + Lock", function(state)
+    megaSwitchEnabled = state
+
+    if state then
+        local posX, posY, posZ = 100000, -200, 100000
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+        safePlatform = Instance.new("Part")
+        safePlatform.Size = Vector3.new(50, 1, 50)
+        safePlatform.Position = Vector3.new(posX, posY - 3, posZ)
+        safePlatform.Anchored = true
+        safePlatform.CanCollide = true
+        safePlatform.Color = Color3.fromRGB(255, 0, 0)
+        safePlatform.Name = "SafePlatform"
+        safePlatform.Parent = workspace
+
+        task.wait(0.2)
+        humanoidRootPart.CFrame = CFrame.new(posX, posY, posZ)
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Teletransporte",
+            Text = "Teleported",
+            Duration = 0
+        })
+
+        local currentPos = humanoidRootPart.CFrame
+        posLockConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = currentPos
+            end
+        end)
+
+        task.spawn(function()
+            while megaSwitchEnabled do
+                pcall(function()
+                    game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", sizeToSet)
+                end)
+
+                local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+                if punch then
+                    punch.Parent = LocalPlayer.Character
+                end
+                local egg = LocalPlayer.Backpack:FindFirstChild("Protein Egg")
+                if egg then
+                    egg.Parent = LocalPlayer.Character
+                end
+
+                local punchTool = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character:FindFirstChild("Punch")
+                if punchTool then
+                    if punchTool.Parent ~= LocalPlayer.Character then
+                        punchTool.Parent = LocalPlayer.Character
+                    end
+                    LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+                    LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+                end
+
+                task.wait(0.01)
+            end
+        end)
+
+    else
+        if posLockConnection then
+            posLockConnection:Disconnect()
+            posLockConnection = nil
+        end
+        if safePlatform then
+            safePlatform:Destroy()
+            safePlatform = nil
+        end
+    end
+end)
+
 local blacklistTextbox = Killing:AddTextBox("Blacklist", function(inputText)
     local playerName = inputText:match("^%s*(.-)%s*$") -- Remove espaÃ§os no inÃ­cio/fim
     if playerName ~= "" then
         for _, name in ipairs(_G.blacklistedPlayers) do
             if name:lower() == playerName:lower() then
-                return -- JÃ¡ estÃ¡ na blacklist
+                return
             end
         end
         table.insert(_G.blacklistedPlayers, playerName)
@@ -678,6 +757,56 @@ Killing:AddSwitch("Kill All", function(state)
                 for _, player in ipairs(Players:GetPlayers()) do
                     if player ~= LocalPlayer and not isWhitelisted(player) then
                         killPlayer(player)
+                    end
+                end
+            end)
+        end
+    else
+        if _G.killAllConnection then
+            _G.killAllConnection:Disconnect()
+            _G.killAllConnection = nil
+        end
+    end
+end)
+
+local switch = Killing:AddSwitch("Kill Enemy 0/1k", function(bool)
+    _G.killAll = bool
+    if bool then
+        if not _G.killAllConnection then
+            _G.killAllConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if _G.killAll then
+                    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                        if player ~= game.Players.LocalPlayer and not isWhitelisted(player) then
+                            local strength = player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Strength")
+                            if strength and strength.Value >= 0 and strength.Value <= 1000 then
+                                killPlayer(player)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    else
+        if _G.killAllConnection then
+            _G.killAllConnection:Disconnect()
+            _G.killAllConnection = nil
+        end
+    end
+end)
+
+local switch = Killing:AddSwitch("Kill Enemy Bigger 10t/90QI", function(bool)
+    _G.killAll = bool
+    if bool then
+        if not _G.killAllConnection then
+            _G.killAllConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if _G.killAll then
+                    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                        if player ~= game.Players.LocalPlayer and not isWhitelisted(player) and not game.Players.LocalPlayer:IsFriendsWith(player.UserId) then
+                            local strength = player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Strength")
+                            if strength and strength.Value >= 1e14 and strength.Value <= 9e16 then
+                                killPlayer(player)
+                            end
+                        end
                     end
                 end
             end)
