@@ -1200,7 +1200,7 @@ local function teleportAndStart(machineName, position)
     end
 end
 
-tabRebirth:AddSwitch("Auto King", function(bool)
+tabRebirth:AddSwitch("Auto Jungle", function(bool)
     if getgenv().working and not bool then
         getgenv().working = false
         return
@@ -1387,3 +1387,200 @@ end
 
 rebirthsStat.Changed:Connect(updateRebirths)
 updateRebirths()
+
+local tabFarming = window:AddTab("Farming")
+
+tabFarming:AddLabel("Misc").TextSize = 20
+
+local player = game.Players.LocalPlayer
+local muscleEvent = player:WaitForChild("muscleEvent")
+local runFastRep = false
+local repsPerTick = 1
+
+local function getPing()
+    local stats = game:GetService("Stats")
+    local pingStat = stats:FindFirstChild("PerformanceStats") and stats.PerformanceStats:FindFirstChild("Ping")
+    return pingStat and pingStat:GetValue() or 0
+end
+
+tabFarming:AddTextBox("Rep Speed", function(value)
+    local num = tonumber(value)
+    if num and num > 0 then
+        repsPerTick = math.floor(num)
+    end
+end, {
+    placeholder = "1",
+})
+
+local function fastRepLoop()
+    while runFastRep do
+        local startTime = tick()
+        while tick() - startTime < 0.75 and runFastRep do
+            for i = 1, repsPerTick do
+                muscleEvent:FireServer("rep")
+            end
+            task.wait(0.02)
+        end
+
+        while runFastRep and getPing() >= 100 do
+            task.wait(1)
+        end
+    end
+end
+
+tabFarming:AddSwitch("Fast Rep", function(state)
+    runFastRep = state
+    if runFastRep then
+        task.spawn(fastRepLoop)
+    else
+        print("")
+    end
+end)
+
+
+tabFarming:AddSwitch("Hide Pop Ups", function(bool)
+    local rSto = game:GetService("ReplicatedStorage")
+    for _, obj in pairs(rSto:GetChildren()) do
+        if obj.Name:match("Frame$") then
+            obj.Visible = not bool
+        end
+    end
+end)
+
+local VIM = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local function pressE()
+    VIM:SendKeyEvent(true, "E", false, game)
+    task.wait(0.1)
+    VIM:SendKeyEvent(false, "E", false, game)
+end
+
+local function autoLift()
+    while getgenv().working do
+        LocalPlayer.muscleEvent:FireServer("rep")
+        task.wait()
+    end
+end
+
+local function teleportAndStart(position)
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = position
+        task.wait(0.1)
+        pressE()
+        getgenv().working = true
+        task.spawn(autoLift)
+    end
+end
+
+tabFarming:AddSwitch("Auto Jungle", function()
+    getgenv().working = false
+    teleportAndStart(CFrame.new(-8352, 34, 2878))
+end)
+
+local autoEatEnabled = false
+
+local function eatProteinEgg()
+    local player = game.Players.LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    local egg = backpack:FindFirstChild("Protein Egg")
+    if egg then
+        egg.Parent = character
+        pcall(function()
+            egg:Activate()
+        end)
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoEatEnabled then
+            eatProteinEgg()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+tabFarming:AddSwitch("Auto Egg", function(state)
+    autoEatEnabled = state
+end)
+
+tabFarming:AddSwitch("Fast Punch", function(state)
+    autoPunchNoAnim = state
+    task.spawn(function()
+        while autoPunchNoAnim do
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch") or LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch")
+            if punch then
+                if punch.Parent ~= LocalPlayer.Character then
+                    punch.Parent = LocalPlayer.Character
+                end
+                LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+                LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+            else
+                autoPunchNoAnim = false
+            end
+            task.wait(0.01)
+        end
+    end)
+end)
+
+tabFarming:AddLabel("Auto Machines").TextSize = 20
+
+tabFarming:AddDropdown("Bench Press", function(val) end)
+tabFarming:AddSwitch("Start", function(state)
+end)
+
+tabFarming:AddDropdown("Pull Up", function(val) end)
+tabFarming:AddSwitch("Start", function(state)
+end)
+
+tabFarming:AddDropdown("Rock Throw", function(val) end)
+tabFarming:AddSwitch("Start", function(state)
+end)
+
+tabFarming:AddLabel("Auto Tools").TextSize = 20
+
+tabFarming:AddSwitch("Weight", function(state)
+end)
+
+tabFarming:AddSwitch("Pushup", function(state)
+end)
+
+tabFarming:AddSwitch("Punch", function(state)
+    autoEquipPunch = state
+    task.spawn(function()
+        while autoEquipPunch do
+            local punch = LocalPlayer.Backpack:FindFirstChild("Punch")
+            if punch then
+                punch.Parent = LocalPlayer.Character
+            end
+            task.wait(0.1)
+        end
+    end)
+end)
+
+tabFarming:AddLabel("Auto Rocks").TextSize = 20
+
+local rockDropdown = tabFarming:AddDropdown("Select Rock", function(text)
+    selectrock = text
+end)
+
+rockDropdown:Add("Starter Rock")
+rockDropdown:Add("Legend Rock")
+rockDropdown:Add("Frozen Rock")
+rockDropdown:Add("Mythical Rock")
+rockDropdown:Add("Eternal Rock")
+rockDropdown:Add("Muscle King Rock")
+rockDropdown:Add("Jungle Rock")
+
+tabFarming:AddSwitch("Start", function(state)
+    getgenv().autoFarm = state
+    if state then
+    end
+end)
