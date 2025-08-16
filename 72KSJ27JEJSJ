@@ -758,3 +758,22 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 local nothingLabel = Killing:AddLabel("")
+
+local whitelistLabel = Killing:AddLabel("Whitelisted Players:\nNone")
+local blacklistLabel = Killing:AddLabel("Blacklisted Players:\nNone")
+
+local function UpdateLabels()
+    if #_G.whitelistedPlayers == 0 then
+        whitelistLabel.Text = "Whitelisted Players:\nNone"
+    else
+        whitelistLabel.Text = "Whitelisted Players:\n" .. table.concat(_G.whitelistedPlayers, "\n")
+    end
+
+    if #_G.blacklistedPlayers == 0 then
+        blacklistLabel.Text = "Blacklisted Players:\nNone"
+    else
+        blacklistLabel.Text = "Blacklisted Players:\n" .. table.concat(_G.blacklistedPlayers, "\n")
+    end
+end
+
+game:GetService("RunService").Heartbeat:Connect(UpdateLabels)
