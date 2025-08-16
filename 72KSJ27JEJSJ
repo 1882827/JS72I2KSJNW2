@@ -1015,12 +1015,7 @@ end)
 
 Players.PlayerRemoving:Connect(function(plr)
     local displayText = getSpecsDisplayText(plr)
-    for _, item in pairs(specsDropdown:GetItems()) do
-        if item.Text == displayText then
-            specsDropdown:Remove(item.Text)
-            break
-        end
-    end
+    specsDropdown:Remove(displayText)
 end)
 
 local function formatValue(n)
