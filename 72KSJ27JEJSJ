@@ -77,7 +77,7 @@ end)
 
 local nothingLabel = tabAutomation:AddLabel("")
 
-tabAutomation:AddLabel("Misc").TextSize = 22
+tabAutomation:AddLabel("Misc").TextSize = 30
 
 tabAutomation:AddTextBox("Camera Zoom", function(v)
     local zoom = tonumber(v)
@@ -257,7 +257,7 @@ end)
 
 local nothingLabel = tabAutomation:AddLabel("")
 
-tabAutomation:AddLabel("Protection").TextSize = 25
+tabAutomation:AddLabel("Protection").TextSize = 30
 
 tabAutomation:AddSwitch("Anti Fling", function(Value)
     if Value then
