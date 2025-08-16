@@ -392,6 +392,14 @@ task.spawn(function()
     end
 end)
 
+tabAutomation:AddButton("Block Trades", function(State)
+            if State then
+                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
+            else
+                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("enableTrading")
+            end
+        end)
+
 tabAutomation:AddButton("Eat Items", function(state)
     autoEatBoostsEnabled = state
 end)
