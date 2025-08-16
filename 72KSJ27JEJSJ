@@ -991,7 +991,7 @@ local function toOption(plr)
     return string.format("%s | %s", plr.DisplayName, plr.Name)
 end
 
-local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
+local PlayerDrop, PlayerDropUI = tabSpecs:AddDropdown("Select Player", function(Value)
     if typeof(Value) ~= "string" then return end
     local disp, user = Value:match("^(.-)%s+|%s+(.+)$")
     if disp and user then
@@ -999,23 +999,29 @@ local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
     end
 end)
 
-local function updateDropdown()
-    local selected = SelectPlayer and toOption(SelectPlayer) or nil
-    PlayerDrop:Clear()
+local playerOptions = {}
 
+local function updateDropdown()
+    for _, data in ipairs(playerOptions) do
+        data:Remove()
+    end
+    table.clear(playerOptions)
+
+    local selected = SelectPlayer and toOption(SelectPlayer) or nil
     local stillExists = false
+
     for _, plr in ipairs(Players:GetPlayers()) do
         local opt = toOption(plr)
-        PlayerDrop:Add(opt)
+        local object, objData = PlayerDrop:Add(opt)
+        table.insert(playerOptions, objData)
         if selected and opt == selected then
             stillExists = true
+            PlayerDropUI.Text = "      [ " .. opt .. " ]"
         end
     end
 
     if not stillExists then
         SelectPlayer = nil
-    elseif selected then
-        PlayerDrop:Set(selected)
     end
 end
 
