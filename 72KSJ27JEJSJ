@@ -1007,13 +1007,18 @@ local function updateDropdown()
     for _, plr in ipairs(Players:GetPlayers()) do
         local opt = toOption(plr)
         PlayerDrop:Add(opt)
-        if selected and opt == selected then stillExists = true end
+        if selected and opt == selected then
+            stillExists = true
+        end
     end
 
     if not stillExists then
         SelectPlayer = nil
+    elseif selected then
+        PlayerDrop:Set(selected)
     end
 end
+
 Players.PlayerAdded:Connect(updateDropdown)
 Players.PlayerRemoving:Connect(updateDropdown)
 updateDropdown()
@@ -1176,17 +1181,25 @@ tabSpecs:AddButton("Print Own Stats", function()
     end
 end).TextColor3 = Color3.fromRGB(255,255,255)
 
+local spectateConn
 tabSpecs:AddButton("Spectate", function()
     if SelectPlayer and SelectPlayer ~= LocalPlayer then
         local humanoid = (SelectPlayer.Character or SelectPlayer.CharacterAdded:Wait()):WaitForChild("Humanoid")
         Camera.CameraSubject = humanoid
-        SelectPlayer.CharacterAdded:Connect(function(newChar)
+        if spectateConn then
+            spectateConn:Disconnect()
+        end
+        spectateConn = SelectPlayer.CharacterAdded:Connect(function(newChar)
             Camera.CameraSubject = newChar:WaitForChild("Humanoid")
         end)
     end
 end).TextColor3 = Color3.fromRGB(255,255,255)
 
 tabSpecs:AddButton("Stop Spectate", function()
+    if spectateConn then
+        spectateConn:Disconnect()
+        spectateConn = nil
+    end
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     Camera.CameraSubject = char:WaitForChild("Humanoid")
 end).TextColor3 = Color3.fromRGB(255,255,255)
