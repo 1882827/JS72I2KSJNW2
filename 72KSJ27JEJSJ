@@ -2,7 +2,7 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/MlFrv
 
 local window = library:AddWindow("Veyna | PAID", {
     main_color = Color3.fromRGB(61, 10, 161),
-    min_size = Vector2.new(735, 650),
+    min_size = Vector2.new(830, 650),
     can_resize = false,
 })
 
@@ -825,7 +825,7 @@ local LocalPlayer = Players.LocalPlayer
 local killsShown = false
 local killsGui = nil
 
-local showKillsButton = Killing:AddButton("Kills UI", function()
+local showKillsButton = Killing:AddButton("Show Kills UI", function()
     killsShown = not killsShown
 
     if killsShown then
