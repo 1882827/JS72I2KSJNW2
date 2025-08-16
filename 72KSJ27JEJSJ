@@ -1034,7 +1034,7 @@ local lblRebirths    = tabSpecs:AddLabel("")
 local lblKills       = tabSpecs:AddLabel("")
 
 tabSpecs:AddLabel("--------------------")
-tabSpecs:AddLabel("Advanced Stats").TextSize = 20
+tabSpecs:AddLabel("Advanced Stats").TextSize = 30
 
 local lblBaseDur     = tabSpecs:AddLabel("")
 local lblUltimate    = tabSpecs:AddLabel("")
