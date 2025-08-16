@@ -1567,20 +1567,60 @@ end)
 
 tabFarming:AddLabel("Auto Rocks").TextSize = 20
 
+function gettool()
+    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+        end
+    end
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+end
+
+local rockData = {
+    ["Tiny Rock"] = {Name = "Tiny Island Rock", Durability = 0},
+    ["Starter Rock"] = {Name = "Starter Island Rock", Durability = 100},
+    ["Legend Beach Rock"] = {Name = "Legend Beach Rock", Durability = 5000},
+    ["Frozen Rock"] = {Name = "Frost Gym Rock", Durability = 150000},
+    ["Mythical Rock"] = {Name = "Mythical Gym Rock", Durability = 400000},
+    ["Eternal Rock"] = {Name = "Eternal Gym Rock", Durability = 750000},
+    ["Legend Rock"] = {Name = "Legend Gym Rock", Durability = 1000000},
+    ["Muscle King Rock"] = {Name = "Muscle King Gym Rock", Durability = 5000000},
+    ["Jungle Rock"] = {Name = "Ancient Jungle Rock", Durability = 10000000},
+}
+
+local selectedRock = nil
+
 local rockDropdown = tabFarming:AddDropdown("Select Rock", function(text)
-    selectrock = text
+    selectedRock = text
 end)
 
-rockDropdown:Add("Starter Rock")
-rockDropdown:Add("Legend Rock")
-rockDropdown:Add("Frozen Rock")
-rockDropdown:Add("Mythical Rock")
-rockDropdown:Add("Eternal Rock")
-rockDropdown:Add("Muscle King Rock")
-rockDropdown:Add("Jungle Rock")
+for rockName, _ in pairs(rockData) do
+    rockDropdown:Add(rockName)
+end
 
 tabFarming:AddSwitch("Start", function(state)
     getgenv().autoFarm = state
-    if state then
-    end
+    task.spawn(function()
+        while getgenv().autoFarm do
+            task.wait()
+            if not getgenv().autoFarm or not selectedRock then break end
+
+            local data = rockData[selectedRock]
+            if data and game:GetService("Players").LocalPlayer.Durability.Value >= data.Durability then
+                for i, v in pairs(game:GetService("Workspace").machinesFolder:GetDescendants()) do
+                    if v.Name == "neededDurability" and v.Value == data.Durability 
+                    and game.Players.LocalPlayer.Character:FindFirstChild("LeftHand") 
+                    and game.Players.LocalPlayer.Character:FindFirstChild("RightHand") then
+                        
+                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 0)
+                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.RightHand, 1)
+                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 0)
+                        firetouchinterest(v.Parent.Rock, game:GetService("Players").LocalPlayer.Character.LeftHand, 1)
+                        gettool()
+                    end
+                end
+            end
+        end
+    end)
 end)
