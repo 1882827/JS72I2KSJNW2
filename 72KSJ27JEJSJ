@@ -2,7 +2,7 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/MlFrv
 
 local window = library:AddWindow("Veyna | PAID", {
     main_color = Color3.fromRGB(61, 10, 161),
-    min_size = Vector2.new(830, 650),
+    min_size = Vector2.new(950, 650),
     can_resize = false,
 })
 
@@ -976,3 +976,173 @@ local function UpdateLabels()
 end
 
 game:GetService("RunService").Heartbeat:Connect(UpdateLabels)
+
+local tabSpecs = window:AddTab("Specs")
+
+tabSpecs:AddLabel("View Player").TextSize = 25
+
+local SelectPlayerName = ""
+local SelectPlayerUser = ""
+
+local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
+    local disp, user = Value:match("(.+) | (.+)")
+    SelectPlayerName = disp
+    SelectPlayerUser = user
+end)
+
+for _, Plr in pairs(game:GetService("Players"):GetPlayers()) do
+    PlayerDrop:Add(Plr.DisplayName .. " | " .. Plr.Name)
+end
+
+local function formatValue(n)
+    local absn = math.abs(n)
+    local sign = n < 0 and "-" or ""
+    if absn >= 1e15 then
+        return string.format("%s%.2fQa", sign, absn / 1e15)
+    elseif absn >= 1e12 then
+        return string.format("%s%.2fT", sign, absn / 1e12)
+    elseif absn >= 1e9 then
+        return string.format("%s%.2fB", sign, absn / 1e9)
+    elseif absn >= 1e6 then
+        return string.format("%s%.2fM", sign, absn / 1e6)
+    elseif absn >= 1e3 then
+        return string.format("%s%.2fK", sign, absn / 1e3)
+    else
+        return tostring(n)
+    end
+end
+
+local lblDisplayName = tabSpecs:AddLabel("")
+local lblUsername    = tabSpecs:AddLabel("")
+local lblStrength    = tabSpecs:AddLabel("")
+local lblDurability  = tabSpecs:AddLabel("")
+local lblAgility     = tabSpecs:AddLabel("")
+local lblRebirths    = tabSpecs:AddLabel("")
+local lblKills       = tabSpecs:AddLabel("")
+
+tabSpecs:AddLabel("--------------------")
+tabSpecs:AddLabel("Advanced Stats").TextSize = 20
+
+local lblBaseDur     = tabSpecs:AddLabel("")
+local lblUltimate    = tabSpecs:AddLabel("")
+local lblPets        = tabSpecs:AddLabel("")
+local lblTotalDur    = tabSpecs:AddLabel("")
+local lblBaseDamage  = tabSpecs:AddLabel("")
+local lblWithPets    = tabSpecs:AddLabel("")
+local lblHitsKill    = tabSpecs:AddLabel("")
+local lblTimeKill    = tabSpecs:AddLabel("")
+
+local BASE_DAMAGE_FACTOR = 0.1
+local PACK_FACTOR_PER_PACK = 0.0335
+local ULTIMATE_BOOST_PERCENT = 75
+local PETS_BOOST_PER_PACK = 33.125
+local PACKS_MAX = 8
+local ATTACK_SPEED = 1.3
+
+task.spawn(function()
+    while task.wait(1) do
+        if SelectPlayerUser ~= "" then
+            local plr = game.Players:FindFirstChild(SelectPlayerUser)
+            if plr and plr:FindFirstChild("leaderstats") then
+                local stats = plr.leaderstats
+
+                lblDisplayName.Text = "Displayname: " .. plr.DisplayName
+                lblUsername.Text    = "Username: @" .. plr.Name
+
+                if stats:FindFirstChild("Strength") then
+                    lblStrength.Text = "Strength: " .. formatValue(stats.Strength.Value)
+                end
+                if stats:FindFirstChild("Durability") then
+                    lblDurability.Text = "Durability: " .. formatValue(stats.Durability.Value)
+                end
+                if plr:FindFirstChild("Agility") then
+                    lblAgility.Text = "Agility: " .. formatValue(plr.Agility.Value)
+                end
+                if stats:FindFirstChild("Rebirths") then
+                    lblRebirths.Text = "Rebirths: " .. formatValue(stats.Rebirths.Value)
+                end
+                if stats:FindFirstChild("Kills") then
+                    lblKills.Text = "Kills: " .. formatValue(stats.Kills.Value)
+                end
+
+                local durability = stats:FindFirstChild("Durability") and stats.Durability.Value or 0
+                local strength   = stats:FindFirstChild("Strength") and stats.Strength.Value or 0
+                local packs = PACKS_MAX
+
+                local ultimateBoost = durability * (ULTIMATE_BOOST_PERCENT/100)
+                local petsBoost = durability * ((PETS_BOOST_PER_PACK * packs) / 100)
+                local totalDur = durability + ultimateBoost + petsBoost
+                local baseDamage = strength * BASE_DAMAGE_FACTOR
+                local withPets = strength * (BASE_DAMAGE_FACTOR + PACK_FACTOR_PER_PACK * packs)
+
+                local hitsToKill = baseDamage > 0 and math.max(1, math.ceil(totalDur / baseDamage)) or 0
+                local timeToKill = hitsToKill / ATTACK_SPEED
+
+                lblBaseDur.Text = "Base Durability: " .. formatValue(durability)
+                lblUltimate.Text = string.format("Ultimate Boost: %s (+%d%%)", formatValue(ultimateBoost), ULTIMATE_BOOST_PERCENT)
+                lblPets.Text = string.format("Pets Boost (%d): %s", packs, formatValue(petsBoost))
+
+                lblTotalDur.Text = "TOTAL DURABILITY: " .. formatValue(totalDur)
+                lblTotalDur.TextColor3 = Color3.fromRGB(0, 255, 255)
+
+                lblBaseDamage.Text = "Your Base Damage: " .. formatValue(baseDamage)
+
+                lblWithPets.Text = string.format("With Your Pets (%d): %s", packs, formatValue(withPets))
+                lblWithPets.TextColor3 = Color3.fromRGB(255, 0, 0)
+
+                lblHitsKill.Text = "Hits to Kill: " .. (hitsToKill == 1 and "INSTANT" or tostring(hitsToKill))
+                lblTimeKill.Text = "Time to Kill: " .. (hitsToKill == 1 and "INSTANT" or string.format("%.1fs", timeToKill))
+            end
+        end
+    end
+end)
+
+tabSpecs:AddLabel("--------------------")
+
+local btnPrint = tabSpecs:AddButton("Print Own Stats", function()
+    print("Printing stats do jogador local...")
+end)
+btnPrint.TextColor3 = Color3.fromRGB(255,0,0)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local isSpectating = false
+local spectateTarget = nil
+
+local btnSpectate = tabSpecs:AddButton("Spectate", function()
+    if SelectPlayerUser ~= "" then
+        local target = Players:FindFirstChild(SelectPlayerUser)
+        if target and target ~= LocalPlayer then
+            local humanoid = target.Character and target.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                Camera.CameraSubject = humanoid
+                spectateTarget = target
+                isSpectating = true
+                print("Spectating:", target.Name)
+            end
+        end
+    end
+end)
+btnSpectate.TextColor3 = Color3.fromRGB(255,0,0)
+
+local btnStopSpectate = tabSpecs:AddButton("Stop Spectate", function()
+    Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or LocalPlayer
+    isSpectating = false
+    spectateTarget = nil
+    print("Stopped spectating, voltou para o player local.")
+end)
+btnStopSpectate.TextColor3 = Color3.fromRGB(255,0,0)
+
+Players.PlayerRemoving:Connect(function(plr)
+    if spectateTarget and plr == spectateTarget then
+        btnStopSpectate:DoClick()
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    if not isSpectating then
+        Camera.CameraSubject = LocalPlayer.Character:WaitForChild("Humanoid")
+    end
+end)
