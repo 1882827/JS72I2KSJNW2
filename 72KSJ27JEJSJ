@@ -979,7 +979,7 @@ game:GetService("RunService").Heartbeat:Connect(UpdateLabels)
 
 local tabSpecs = window:AddTab("Specs")
 
-tabSpecs:AddLabel("View Player").TextSize = 25
+tabSpecs:AddLabel("View Player").TextSize = 30
 
 local SelectPlayerName, SelectPlayerUser = "", ""
 
@@ -1040,7 +1040,7 @@ local lblRebirths    = tabSpecs:AddLabel("")
 local lblKills       = tabSpecs:AddLabel("")
 
 tabSpecs:AddLabel("--------------------")
-tabSpecs:AddLabel("Advanced Stats").TextSize = 20
+tabSpecs:AddLabel("Advanced Stats").TextSize = 30
 
 local lblBaseDur    = tabSpecs:AddLabel("")
 local lblUltimate   = tabSpecs:AddLabel("")
