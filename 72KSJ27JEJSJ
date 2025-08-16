@@ -986,14 +986,42 @@ tabRebirth:AddTextBox("Target Point (Optional)", function(value)
     getgenv().targetPoint = value
 end, {placeholder = "Target Point (Optional)"})
 
-tabRebirth:AddSwitch("Auto King", function(state)
-    getgenv().autoKing = state
-    task.spawn(function()
-        while getgenv().autoKing do
-            game:GetService("ReplicatedStorage").rEvents.muscleKingEvent:FireServer("muscleKing")
-            task.wait(1)
-        end
-    end)
+local VIM = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local function pressEKey()
+    VIM:SendKeyEvent(true, "E", false, game)
+    task.wait(0.1)
+    VIM:SendKeyEvent(false, "E", false, game)
+end
+
+local function autoLift()
+    while getgenv().working do
+        LocalPlayer.muscleEvent:FireServer("rep")
+        task.wait()
+    end
+end
+
+local function teleportAndStart(machineName, position)
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = position
+        task.wait(0.1)
+        pressEKey()
+        task.spawn(autoLift)
+    end
+end
+
+tabRebirth:AddSwitch("Auto King", function(bool)
+    if getgenv().working and not bool then
+        getgenv().working = false
+        return
+    end
+    getgenv().working = bool
+    if bool then
+        teleportAndStart("Pull Up", CFrame.new(-8666, 34, 2070))
+    end
 end)
 
 tabRebirth:AddSwitch("Always Size 1", function(state)
