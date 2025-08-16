@@ -983,6 +983,9 @@ tabSpecs:AddLabel("View Player").TextSize = 30
 
 local Players     = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local Camera      = workspace:WaitForChild("CurrentCamera")
+
+local SelectPlayerName, SelectPlayerUser = "", ""
 
 local function toOption(plr)
     return string.format("%s | %s", plr.DisplayName, plr.Name)
@@ -998,37 +1001,20 @@ local PlayerDrop = tabSpecs:AddDropdown("Select Player", function(Value)
 end)
 
 local function updateDropdown()
-    for _, item in pairs(PlayerDrop:GetItems()) do
-        PlayerDrop:Remove(item.Text)
-    end
-
-    local selected = (SelectPlayerName ~= "" and SelectPlayerUser ~= "")
-        and (SelectPlayerName.." | "..SelectPlayerUser)
-        or nil
-
+    local selected = (SelectPlayerName ~= "" and SelectPlayerUser ~= "") and (SelectPlayerName.." | "..SelectPlayerUser) or nil
+    PlayerDrop:Clear()
     local stillExists = false
-
     for _, plr in ipairs(Players:GetPlayers()) do
         local opt = toOption(plr)
         PlayerDrop:Add(opt)
-        if selected and opt == selected then
-            stillExists = true
-        end
+        if selected and opt == selected then stillExists = true end
     end
-
-    if not stillExists then
-        SelectPlayerName, SelectPlayerUser = "", ""
-    end
+    if not stillExists then SelectPlayerName, SelectPlayerUser = "", "" end
 end
 
-Players.PlayerAdded:Connect(updateDropdown)
+Players.PlayerAdded:Connect(function(plr) PlayerDrop:Add(toOption(plr)) end)
 Players.PlayerRemoving:Connect(updateDropdown)
-
 updateDropdown()
-
-local Players     = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Camera      = workspace:WaitForChild("CurrentCamera")
 
 local function formatValue(n)
     n = tonumber(n) or 0
@@ -1092,23 +1078,51 @@ local DEFAULT_PETS_PER_PACK  = 33.125
 local DEFAULT_PACKS          = 8
 local ATTACK_SPEED           = 1.3
 
-local function toOption(plr) return string.format("%s | %s", plr.DisplayName, plr.Name) end
-
-local function updateDropdown()
-    local selected = (SelectPlayerName ~= "" and SelectPlayerUser ~= "") and (SelectPlayerName.." | "..SelectPlayerUser) or nil
-    PlayerDrop:Clear()
-    local stillExists = false
-    for _, plr in ipairs(Players:GetPlayers()) do
-        local opt = toOption(plr)
-        PlayerDrop:Add(opt)
-        if selected and opt == selected then stillExists = true end
-    end
-    if not stillExists then SelectPlayerName, SelectPlayerUser = "", "" end
+local function safeValue(val, default)
+    val = tonumber(val)
+    return (val and val > 0) and val or default
 end
 
-Players.PlayerAdded:Connect(function(plr) PlayerDrop:Add(toOption(plr)) end)
-Players.PlayerRemoving:Connect(updateDropdown)
-updateDropdown()
+local function getDynamicStats(plr, stats)
+    local strength   = safeValue(getStatValue(stats, "Strength"),   1)
+    local durability = safeValue(getStatValue(stats, "Durability"), 1)
+    local rebirths   = safeValue(getStatValue(stats, "Rebirths"),   0)
+    local kills      = safeValue(getStatValue(stats, "Kills"),      0)
+    local agility    = safeValue(getStatValue(stats, "Agility"),    1)
+
+    local packs = safeValue(getStatValue(plr, "Packs"), DEFAULT_PACKS)
+
+    local ultimatePercent = safeValue(getStatValue(plr, "UltimateBoost"), DEFAULT_ULTIMATE_BOOST)
+    local ultimateBoost   = durability * (ultimatePercent / 100)
+
+    local petsBoostPercent = safeValue(getStatValue(plr, "PetsBoost"), DEFAULT_PETS_PER_PACK * packs)
+    local petsBoost        = durability * (petsBoostPercent / 100)
+
+    local totalDur   = durability + ultimateBoost + petsBoost
+    local baseDamage = math.max(1, strength * BASE_DAMAGE_FACTOR)
+    local withPets   = math.max(1, strength * (BASE_DAMAGE_FACTOR + PACK_FACTOR_PER_PACK * packs))
+
+    local hitsToKill = math.max(1, math.ceil(totalDur / baseDamage))
+    local timeToKill = hitsToKill / ATTACK_SPEED
+
+    return {
+        strength = strength,
+        durability = durability,
+        rebirths = rebirths,
+        kills = kills,
+        agility = agility,
+        packs = packs,
+        ultimateBoost = ultimateBoost,
+        petsBoost = petsBoost,
+        totalDur = totalDur,
+        baseDamage = baseDamage,
+        withPets = withPets,
+        hitsToKill = hitsToKill,
+        timeToKill = timeToKill,
+        ultimatePercent = ultimatePercent,
+        petsBoostPercent = petsBoostPercent
+    }
+end
 
 local isSpectating, spectateTarget = false, nil
 
@@ -1142,50 +1156,6 @@ end).TextColor3 = Color3.fromRGB(255,255,255)
 
 Players.PlayerRemoving:Connect(function(plr) if spectateTarget == plr then stopSpectate() end end)
 LocalPlayer.CharacterAdded:Connect(function(newChar) if not isSpectating then Camera.CameraSubject = newChar:WaitForChild("Humanoid") end end)
-
-local function getDynamicStats(plr, stats)
-    local strength   = getStatValue(stats, "Strength")
-    local durability = getStatValue(stats, "Durability")
-    local rebirths   = getStatValue(stats, "Rebirths")
-    local kills      = getStatValue(stats, "Kills")
-    local agility    = getStatValue(stats, "Agility")
-
-    local packs = getStatValue(plr, "Packs")
-    if packs == 0 then packs = DEFAULT_PACKS end
-
-    local ultimatePercent = getStatValue(plr, "UltimateBoost")
-    if ultimatePercent == 0 then ultimatePercent = DEFAULT_ULTIMATE_BOOST end
-    local ultimateBoost = durability * (ultimatePercent / 100)
-
-    local petsBoostPercent = getStatValue(plr, "PetsBoost")
-    if petsBoostPercent == 0 then petsBoostPercent = DEFAULT_PETS_PER_PACK * packs end
-    local petsBoost = durability * (petsBoostPercent / 100)
-
-    local totalDur   = durability + ultimateBoost + petsBoost
-    local baseDamage = strength * BASE_DAMAGE_FACTOR
-    local withPets   = strength * (BASE_DAMAGE_FACTOR + PACK_FACTOR_PER_PACK * packs)
-
-    local hitsToKill = baseDamage > 0 and math.max(1, math.ceil(totalDur / baseDamage)) or 0
-    local timeToKill = hitsToKill > 0 and (hitsToKill / ATTACK_SPEED) or 0
-
-    return {
-        strength = strength,
-        durability = durability,
-        rebirths = rebirths,
-        kills = kills,
-        agility = agility,
-        packs = packs,
-        ultimateBoost = ultimateBoost,
-        petsBoost = petsBoost,
-        totalDur = totalDur,
-        baseDamage = baseDamage,
-        withPets = withPets,
-        hitsToKill = hitsToKill,
-        timeToKill = timeToKill,
-        ultimatePercent = ultimatePercent,
-        petsBoostPercent = petsBoostPercent
-    }
-end
 
 task.spawn(function()
     while task.wait(1) do
