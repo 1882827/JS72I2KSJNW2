@@ -1726,8 +1726,50 @@ tabFarming:AddSwitch("Start", function(state)
 end)
 
 local tabCal = window:AddTab("Calculator")
-
 tabCal:AddLabel("Calculations").TextSize = 29
+
+local function parseValue(s)
+    if not s then return 0 end
+    s = s:upper():gsub("%s", ""):gsub(",", "")
+    local suffixes = {
+        K = 1e3, M = 1e6, B = 1e9, T = 1e12,
+        QA = 1e15, QN = 1e18, SX = 1e21,
+        SP = 1e24, OC = 1e27
+    }
+    local numPart, suf = s:match("^([%-]?[%d%.]+)(%a*)$")
+    if not numPart then return 0 end
+    local n = tonumber(numPart) or 0
+    if suf ~= "" and suffixes[suf] then
+        return n * suffixes[suf]
+    end
+    return n
+end
+
+local function formatValue(n)
+    local absn = math.abs(n)
+    local sign = n < 0 and "-" or ""
+    if absn >= 1e27 then
+        return string.format("%s%.2fOc", sign, absn / 1e27)
+    elseif absn >= 1e24 then
+        return string.format("%s%.2fSp", sign, absn / 1e24)
+    elseif absn >= 1e21 then
+        return string.format("%s%.2fSx", sign, absn / 1e21)
+    elseif absn >= 1e18 then
+        return string.format("%s%.2fQn", sign, absn / 1e18)
+    elseif absn >= 1e15 then
+        return string.format("%s%.2fQa", sign, absn / 1e15)
+    elseif absn >= 1e12 then
+        return string.format("%s%.2fT", sign, absn / 1e12)
+    elseif absn >= 1e9 then
+        return string.format("%s%.2fB", sign, absn / 1e9)
+    elseif absn >= 1e6 then
+        return string.format("%s%.2fM", sign, absn / 1e6)
+    elseif absn >= 1e3 then
+        return string.format("%s%.2fK", sign, absn / 1e3)
+    else
+        return string.format("%s%.2f", sign, absn)
+    end
+end
 
 local folderRebirth = tabCal:AddFolder("Rebirth Calculator")
 local lblTitleRebirth = folderRebirth:AddLabel("Rebirth Calculator")
@@ -1791,7 +1833,6 @@ if player and player:FindFirstChild("leaderstats") and player.leaderstats:FindFi
         if useCurrentRebirth then updateRebirthCalc() end
     end)
 end
-
 updateRebirthCalc()
 
 local folderDamage = tabCal:AddFolder("Damage Calculator")
