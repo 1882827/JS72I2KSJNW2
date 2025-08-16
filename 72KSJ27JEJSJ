@@ -2,7 +2,7 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/MlFrv
 
 local window = library:AddWindow("Veyna | PAID", {
     main_color = Color3.fromRGB(61, 10, 161),
-    min_size = Vector2.new(950, 650),
+    min_size = Vector2.new(685, 800),
     can_resize = false,
 })
 
