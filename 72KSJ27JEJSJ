@@ -1558,10 +1558,10 @@ local function teleportAndStart(position)
 end
 
 local workoutPositions = {
-    ["Jungle Bench Press"] = CFrame.new(-8173, 64, 1898),
-    ["Jungle Squat"] = CFrame.new(-8352, 34, 2878),
-    ["Jungle Pull Ups"] = CFrame.new(-8666, 34, 2070),
-    ["Jungle Boulder"] = CFrame.new(-8621, 34, 2684),
+    ["Jungle Gym - Jungle Bench Press"] = CFrame.new(-8173, 64, 1898),
+    ["Jungle Gym - Jungle Squat"] = CFrame.new(-8352, 34, 2878),
+    ["Jungle Gym - Jungle Pull Ups"] = CFrame.new(-8666, 34, 2070),
+    [" Jungle Gym - Jungle Boulder"] = CFrame.new(-8621, 34, 2684),
     ["Eternal Gym - Bench Press"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
     ["Legend Gym - Bench Press"] = CFrame.new(4111.91748, 1020.46674, -3799.97217),
     ["Muscle King Gym - Bench Press"] = CFrame.new(-8590.06152, 46.0167427, -6043.34717),
