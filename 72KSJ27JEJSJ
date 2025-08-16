@@ -1046,7 +1046,7 @@ local antiLagButton = tabRebirth:AddButton("Anti Lag", function()
     lighting.ClockTime = 0
     lighting.Ambient = Color3.new(0,0,0)
 end)
-antiLagButton.TextColor3 = Color3.fromRGB(255, 0, 0)
+antiLagButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 
 local nothingLabel = tabRebirth:AddLabel("")
 
@@ -1145,24 +1145,22 @@ footerRebirthsLabel.TextSize = 18
 local footerRebirthsGainedLabel = tabRebirth:AddLabel("Rebirths Gained: 0")
 footerRebirthsGainedLabel.TextSize = 18
 
-local startTime = tick()
-local initialRebirths = rebirthsStat.Value
-
 task.spawn(function()
     while true do
-        local elapsed = tick() - startTime
-        local days = math.floor(elapsed / 86400)
-        local hours = math.floor((elapsed % 86400) / 3600)
-        local minutes = math.floor((elapsed % 3600) / 60)
-        local seconds = math.floor(elapsed % 60)
+        local currentTime = tick()
+        local elapsedTime = currentTime - startTime
+        local days = math.floor(elapsedTime / (24 * 3600))
+        local hours = math.floor((elapsedTime % (24 * 3600)) / 3600)
+        local minutes = math.floor((elapsedTime % 3600) / 60)
+        local seconds = math.floor(elapsedTime % 60)
 
         footerTimeLabel.Text = string.format("%dd %dh %dm %ds", days, hours, minutes, seconds)
 
         local currentRebirths = rebirthsStat.Value
-        local gainedRebirths = currentRebirths - initialRebirths
+        local sessionRebirthsDelta = currentRebirths - initialRebirths
 
         footerRebirthsLabel.Text = "Rebirths: " .. formatNumber(currentRebirths)
-        footerRebirthsGainedLabel.Text = "Rebirths Gained: " .. formatNumber(gainedRebirths)
+        footerRebirthsGainedLabel.Text = "Rebirths Gained: " .. formatNumber(sessionRebirthsDelta)
 
         task.wait(0.5)
     end
