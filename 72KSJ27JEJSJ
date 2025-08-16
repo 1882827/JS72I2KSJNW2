@@ -1530,27 +1530,127 @@ tabFarming:AddSwitch("Fast Punch", function(state)
     end)
 end)
 
+local VIM = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local function pressE()
+    VIM:SendKeyEvent(true, "E", false, game)
+    task.wait(0.1)
+    VIM:SendKeyEvent(false, "E", false, game)
+end
+
+local function autoLift()
+    while getgenv().working do
+        LocalPlayer.muscleEvent:FireServer("rep")
+        task.wait()
+    end
+end
+
+local function teleportAndStart(position)
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = position
+        task.wait(0.1)
+        pressE()
+        task.spawn(autoLift)
+    end
+end
+
+local workoutPositions = {
+    ["Jungle Bench Press"] = CFrame.new(-8173, 64, 1898),
+    ["Jungle Squat"] = CFrame.new(-8352, 34, 2878),
+    ["Jungle Pull Ups"] = CFrame.new(-8666, 34, 2070),
+    ["Jungle Boulder"] = CFrame.new(-8621, 34, 2684),
+    ["Eternal Gym - Bench Press"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym - Bench Press"] = CFrame.new(4111.91748, 1020.46674, -3799.97217),
+    ["Muscle King Gym - Bench Press"] = CFrame.new(-8590.06152, 46.0167427, -6043.34717),
+    ["Eternal Gym - Squat"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym - Squat"] = CFrame.new(4304.99023, 987.829956, -4124.2334),
+    ["Muscle King Gym - Squat"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477),
+    ["Eternal Gym - Deadlift"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym - Deadlift"] = CFrame.new(4304.99023, 987.829956, -4124.2334),
+    ["Muscle King Gym - Deadlift"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477),
+    ["Eternal Gym - Pull Up"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+    ["Legend Gym - Pull Up"] = CFrame.new(4304.99023, 987.829956, -4124.2334),
+    ["Muscle King Gym - Pull Up"] = CFrame.new(-8940.12402, 13.1642084, -5699.13477)
+}
+
 tabFarming:AddLabel("Auto Machines").TextSize = 20
 
-tabFarming:AddDropdown("Bench Press", function(val) end)
-tabFarming:AddSwitch("Start", function(state)
+local selectedMachine
+
+local dropdown = tabFarming:AddDropdown("Select Machine", function(val)
+    selectedMachine = val
 end)
 
-tabFarming:AddDropdown("Pull Up", function(val) end)
-tabFarming:AddSwitch("Start", function(state)
-end)
+for name, _ in pairs(workoutPositions) do
+    dropdown:Add(name)
+end
 
-tabFarming:AddDropdown("Rock Throw", function(val) end)
 tabFarming:AddSwitch("Start", function(state)
+    if getgenv().working and not state then
+        getgenv().working = false
+        return
+    end
+    
+    getgenv().working = state
+    if state and selectedMachine and workoutPositions[selectedMachine] then
+        teleportAndStart(workoutPositions[selectedMachine])
+    end
 end)
 
 tabFarming:AddLabel("Auto Tools").TextSize = 20
 
-tabFarming:AddSwitch("Weight", function(state)
-end)
+tabFarming:AddSwitch("Weight", function(Value)
+    _G.AutoWeight = Value
+    
+    if Value then
+        local weightTool = game.Players.LocalPlayer.Backpack:FindFirstChild("Weight")
+        if weightTool then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(weightTool)
+        end
+    else
+        local character = game.Players.LocalPlayer.Character
+        local equipped = character:FindFirstChild("Weight")
+        if equipped then
+            equipped.Parent = game.Players.LocalPlayer.Backpack
+        end
+    end
+    
+    task.spawn(function()
+        while _G.AutoWeight do
+            if not _G.AutoWeight then break end
+            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
+            task.wait(0.1)
+        end
+    end)
+end, "Auto Weight")
 
-tabFarming:AddSwitch("Pushup", function(state)
-end)
+tabFarming:AddSwitch("Pushups", function(Value)
+    _G.AutoPushups = Value
+    
+    if Value then
+        local pushupsTool = game.Players.LocalPlayer.Backpack:FindFirstChild("Pushups")
+        if pushupsTool then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(pushupsTool)
+        end
+    else
+        local character = game.Players.LocalPlayer.Character
+        local equipped = character:FindFirstChild("Pushups")
+        if equipped then
+            equipped.Parent = game.Players.LocalPlayer.Backpack
+        end
+    end
+    
+    task.spawn(function()
+        while _G.AutoPushups do
+            if not _G.AutoPushups then break end
+            game:GetService("Players").LocalPlayer.muscleEvent:FireServer("rep")
+            task.wait(0.1)
+        end
+    end)
+end, "Auto Pushups")
 
 tabFarming:AddSwitch("Punch", function(state)
     autoEquipPunch = state
