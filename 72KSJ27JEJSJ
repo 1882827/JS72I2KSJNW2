@@ -1530,6 +1530,8 @@ tabFarming:AddSwitch("Fast Punch", function(state)
     end)
 end)
 
+local nothingLabel = tabFarming:AddLabel("")
+
 local VIM = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -1600,6 +1602,8 @@ tabFarming:AddSwitch("Start", function(state)
     end
 end)
 
+local nothingLabel = tabFarming:AddLabel("")
+
 tabFarming:AddLabel("Auto Tools").TextSize = 20
 
 tabFarming:AddSwitch("Weight", function(Value)
@@ -1664,6 +1668,8 @@ tabFarming:AddSwitch("Punch", function(state)
         end
     end)
 end)
+
+local nothingLabel = tabFarming:AddLabel("")
 
 tabFarming:AddLabel("Auto Rocks").TextSize = 20
 
