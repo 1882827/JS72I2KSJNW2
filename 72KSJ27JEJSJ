@@ -987,24 +987,21 @@ local Camera      = workspace:WaitForChild("CurrentCamera")
 
 local SelectPlayer = nil
 
-local function toOption(plr)
-    return string.format("%s | %s", plr.DisplayName, plr.Name)
+local function getSpecsDisplayText(plr)
+    return plr.DisplayName .. " | " .. plr.Name
 end
 
-local SelectPlayer = nil
-
 local specsDropdown = tabSpecs:AddDropdown("Select Player", function(selectedText)
-    local disp, user = selectedText:match("^(.-)%s+|%s+(.+)$")
-    if disp and user then
+    local parts = string.split(selectedText, " | ")
+    if #parts == 2 then
+        local disp, user = parts[1], parts[2]
         SelectPlayer = Players:FindFirstChild(user)
     else
         SelectPlayer = nil
     end
 end)
 
-local function getSpecsDisplayText(plr)
-    return plr.DisplayName .. " | " .. plr.Name
-end
+specsDropdown:Add("Carregando...")
 
 local function refreshSpecsDropdown()
     specsDropdown:Clear()
@@ -1013,13 +1010,8 @@ local function refreshSpecsDropdown()
     end
 end
 
-Players.PlayerAdded:Connect(function(plr)
-    refreshSpecsDropdown()
-end)
-
-Players.PlayerRemoving:Connect(function(plr)
-    refreshSpecsDropdown()
-end)
+Players.PlayerAdded:Connect(refreshSpecsDropdown)
+Players.PlayerRemoving:Connect(refreshSpecsDropdown)
 
 refreshSpecsDropdown()
 
