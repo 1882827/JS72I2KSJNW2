@@ -1012,6 +1012,19 @@ local function formatValue(n)
     end
 end
 
+local function parseValue(s)
+    if not s then return 0 end
+    s = tostring(s):upper():gsub("%s", ""):gsub(",", "")
+    local suffixes = { K = 1e3, M = 1e6, B = 1e9, T = 1e12, QA = 1e15 }
+    local numPart, suf = s:match("^([%-]?[%d%.]+)(%a*)$")
+    if not numPart then return 0 end
+    local n = tonumber(numPart) or 0
+    if suf ~= "" and suffixes[suf] then
+        return n * suffixes[suf]
+    end
+    return n
+end
+
 local lblDisplayName = tabSpecs:AddLabel("")
 local lblUsername    = tabSpecs:AddLabel("")
 local lblStrength    = tabSpecs:AddLabel("")
@@ -1049,26 +1062,19 @@ task.spawn(function()
                 lblDisplayName.Text = "Displayname: " .. plr.DisplayName
                 lblUsername.Text    = "Username: @" .. plr.Name
 
-                if stats:FindFirstChild("Strength") then
-                    lblStrength.Text = "Strength: " .. formatValue(stats.Strength.Value)
-                end
-                if stats:FindFirstChild("Durability") then
-                    lblDurability.Text = "Durability: " .. formatValue(stats.Durability.Value)
-                end
-                if plr:FindFirstChild("Agility") then
-                    lblAgility.Text = "Agility: " .. formatValue(plr.Agility.Value)
-                end
-                if stats:FindFirstChild("Rebirths") then
-                    lblRebirths.Text = "Rebirths: " .. formatValue(stats.Rebirths.Value)
-                end
-                if stats:FindFirstChild("Kills") then
-                    lblKills.Text = "Kills: " .. formatValue(stats.Kills.Value)
-                end
+                local strength   = stats:FindFirstChild("Strength") and parseValue(stats.Strength.Value) or 0
+                local durability = stats:FindFirstChild("Durability") and parseValue(stats.Durability.Value) or 0
+                local agility    = plr:FindFirstChild("Agility") and parseValue(plr.Agility.Value) or 0
+                local rebirths   = stats:FindFirstChild("Rebirths") and parseValue(stats.Rebirths.Value) or 0
+                local kills      = stats:FindFirstChild("Kills") and parseValue(stats.Kills.Value) or 0
 
-                local durability = stats:FindFirstChild("Durability") and stats.Durability.Value or 0
-                local strength   = stats:FindFirstChild("Strength") and stats.Strength.Value or 0
+                lblStrength.Text   = "Strength: " .. formatValue(strength)
+                lblDurability.Text = "Durability: " .. formatValue(durability)
+                lblAgility.Text    = "Agility: " .. formatValue(agility)
+                lblRebirths.Text   = "Rebirths: " .. formatValue(rebirths)
+                lblKills.Text      = "Kills: " .. formatValue(kills)
+
                 local packs = PACKS_MAX
-
                 local ultimateBoost = durability * (ULTIMATE_BOOST_PERCENT/100)
                 local petsBoost = durability * ((PETS_BOOST_PER_PACK * packs) / 100)
                 local totalDur = durability + ultimateBoost + petsBoost
@@ -1102,7 +1108,7 @@ tabSpecs:AddLabel("--------------------")
 local btnPrint = tabSpecs:AddButton("Print Own Stats", function()
     print("Printing stats do jogador local...")
 end)
-btnPrint.TextColor3 = Color3.fromRGB(255,0,0)
+btnPrint.TextColor3 = Color3.fromRGB(255,255,255)
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -1125,7 +1131,7 @@ local btnSpectate = tabSpecs:AddButton("Spectate", function()
         end
     end
 end)
-btnSpectate.TextColor3 = Color3.fromRGB(255,0,0)
+btnSpectate.TextColor3 = Color3.fromRGB(255,255,255)
 
 local btnStopSpectate = tabSpecs:AddButton("Stop Spectate", function()
     Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") or LocalPlayer
@@ -1133,7 +1139,7 @@ local btnStopSpectate = tabSpecs:AddButton("Stop Spectate", function()
     spectateTarget = nil
     print("Stopped spectating, voltou para o player local.")
 end)
-btnStopSpectate.TextColor3 = Color3.fromRGB(255,0,0)
+btnStopSpectate.TextColor3 = Color3.fromRGB(255,255,255)
 
 Players.PlayerRemoving:Connect(function(plr)
     if spectateTarget and plr == spectateTarget then
@@ -1145,190 +1151,4 @@ LocalPlayer.CharacterAdded:Connect(function()
     if not isSpectating then
         Camera.CameraSubject = LocalPlayer.Character:WaitForChild("Humanoid")
     end
-end)
-
-local tabteleport = window:AddTab("Teleports")
-
-tabteleport:AddButton("Spawn", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(2, 8, 115)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Secret Area", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(1947, 2, 6191)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Tiny Island", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(-34, 7, 1903)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Teleport Frozen", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(- 2600.00244, 3.67686558, - 403.884369, 0.0873617008, 1.0482899e-09, 0.99617666, 3.07204253e-08, 1, - 3.7464023e-09, - 0.99617666, 3.09302628e-08, 0.0873617008)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Mythical Island", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(2255, 7, 1071)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Inferno Island", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(-6768, 7, -1287)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Legend Island", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(4604, 991, -3887)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Muscle King Island", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(-8646, 17, -5738)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Jungle Island", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(-8659, 6, 2384)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Brawl Lava", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(4471, 119, -8836)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Brawl Desert", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(960, 17, -7398)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddButton("Brawl Regular", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoidRootPart.CFrame = CFrame.new(-1849, 20, -6335)
-    
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
-end)
-
-tabteleport:AddLabel("Island To Fight").TextSize = 25
-
-tabteleport:AddButton("Safe Spot", function()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
-    local posX, posY, posZ = 100000, -200, 100000
-
-    local platform = Instance.new("Part")
-    platform.Size = Vector3.new(50, 1, 50)
-    platform.Position = Vector3.new(posX, posY - 3, posZ)
-    platform.Anchored = true
-    platform.CanCollide = true
-    platform.Color = Color3.fromRGB(255, 0, 0)
-    platform.Name = "SafePlatform"
-    platform.Parent = workspace
-
-    task.wait(0.2)
-
-    humanoidRootPart.CFrame = CFrame.new(posX, posY, posZ)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Teletransporte",
-        Text = "Teleported",
-        Duration = 0
-    })
 end)
