@@ -89,18 +89,33 @@ tabAutomation:AddTextBox("Camera Zoom", function(v)
     end
 end)
 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
 local godModeToggle = false
-        tabAutomation:AddSwitch("God Mode (Brawl)", function(State)
-            godModeToggle = State
-            if State then
-                task.spawn(function()
-                    while godModeToggle do
-                        game:GetService("ReplicatedStorage").rEvents.brawlEvent:FireServer("joinBrawl")
-                        task.wait(0)
-                    end
-                end)
-            end
+
+local function autoJoinBrawl()
+    while godModeToggle do
+        pcall(function()
+            ReplicatedStorage.rEvents.brawlEvent:FireServer("joinBrawl")
         end)
+        task.wait(0.1)
+    end
+end
+
+tabAutomation:AddSwitch("God Mode (Brawl)", function(state)
+    godModeToggle = state
+    if state then
+        task.spawn(autoJoinBrawl)
+    end
+end)
+
+player.CharacterAdded:Connect(function()
+    if godModeToggle then
+        task.spawn(autoJoinBrawl)
+    end
+end)
 
 tabAutomation:AddSwitch("Show Pets", function(state)
     local rEvents = game:GetService("ReplicatedStorage"):FindFirstChild("rEvents")
